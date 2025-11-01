@@ -17,6 +17,6 @@ Language: Python
 Library: Pygame
 
 # 🚀 Getting Started
-<pre> ```bash git clone https://github.com/your-username/TetriMind.git cd TetriMind pip install -r requirements.txt python main.py ``` </pre>
+<pre> git clone https://github.com/your-username/TetriMind.git cd TetriMind pip install -r requirements.txt python main.py </pre>
 # 📘 License
 This project is open-source under the MIT License.
