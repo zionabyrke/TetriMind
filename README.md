@@ -7,7 +7,7 @@ Players can enjoy traditional gameplay or challenge the AI in Player vs AI Mode.
 
 # ✨ Features
 - Classic Tetris gameplay with responsive controls
-- AI Agent
+- Player vs AI mode with difficulty levels
 
 # ⚙️ Tech Stack
 Language: Python
