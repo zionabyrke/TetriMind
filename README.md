@@ -1,22 +1,20 @@
 # TetriMind
-
-A Tetris Game with Reinforcement Learning AI Agent
+<br>A Tetris Game with Reinforcement Learning AI Agent
 
 # 🎮 Overview
-
-TetriMind is a Python-based Tetris project that integrates an AI Agent trained via reinforcement learning to autonomously play and improve at the game.
+<br>TetriMind is a Python-based Tetris project that integrates an AI Agent trained via reinforcement learning to autonomously play and improve at the game.
 Players can enjoy traditional gameplay or challenge the AI in Player vs AI Mode.
 
 # ✨ Features
 - Classic Tetris gameplay with responsive controls
-- Built with Python and Pygame
+- AI Agent
 
 # ⚙️ Tech Stack
-
-Language: Python
+<br>Language: Python
 Library: Pygame
 
 # 🚀 Getting Started
-<pre> git clone https://github.com/your-username/TetriMind.git cd TetriMind pip install -r requirements.txt python main.py </pre>
+<pre> git clone https://github.com/your-username/TetriMind.git <br>cd TetriMind <br>pip install -r requirements.txt <br>python main.py </pre>
+
 # 📘 License
 This project is open-source under the MIT License.
