@@ -11,7 +11,7 @@ A Tetris Game with Reinforcement Learning AI Agent
 
 - Open the folder in Visual Studio Code and run:
 
-      python main.py
+      python project/main.py
 
 <br>
 
