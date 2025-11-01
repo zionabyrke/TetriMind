@@ -11,9 +11,3 @@ TetriMind is a Python-based Tetris project that integrates an AI Agent trained v
 # ⚙️ Tech Stack
 Language: Python
 <br>Library: Pygame
-
-# 🚀 Getting Started
-<pre>git clone https://github.com/your-username/TetriMind.git <br>cd TetriMind <br>pip install -r requirements.txt <br>python project/main.py </pre>
-
-# 📘 License
-This project is open-source under the MIT License.
