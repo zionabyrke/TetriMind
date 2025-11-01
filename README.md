@@ -42,6 +42,7 @@ Test before committing.
 Keep `main` stable at all times.
 
 <br>
+
 # 🎮 Overview
 TetriMind is a Python-based Tetris project that integrates an AI Agent trained via reinforcement learning to autonomously play the game. Players can enjoy traditional gameplay or challenge the AI in Player vs AI Mode.
 
