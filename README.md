@@ -13,7 +13,6 @@ Language: Python
 <br>Library: Pygame
 
 # 🧩 For Project Collaborators
-<br>
 
 ## ⚙️ Setup
 - Clone the repository and install dependencies from `requirements.txt`
