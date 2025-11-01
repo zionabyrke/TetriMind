@@ -1,8 +1,11 @@
+from datetime import time
+
 class GameInfo:
     def __init__(self):
-        self.playScore = playScore
-        self.gameLevel = gameLevel
-        self.elapsedTime = elapsedTime
+        self.field = None
+        self.playerScore = 0
+        self.gameLevel = 1
+        self.elapsedTime = time()
 
-    def updateGameInfo():
+    # def updateGameInfo(self):
         

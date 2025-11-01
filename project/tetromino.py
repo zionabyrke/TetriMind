@@ -1,11 +1,7 @@
-from playfield import PlayField
 from shapelist import ShapeList
 
 class Tetromino:
-    def __init__(self, field):
-        self.field = field
-        self.coord = coord
-        self.shapeType = shapeType
-
-    def getShape():
-
+    def __init__(self):
+        self.field = None
+        self.coord = (0, 0)
+        self.shapeType = ShapeList()

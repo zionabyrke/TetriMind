@@ -1,17 +1,20 @@
-from action import Action
 from gameinfo import GameInfo
 from tetromino import Tetromino
+from action import Action
 
-class PlayField:
-    def __init__(self, blockMatrix, currentPiece):
-        self.blockMatrix = blockMatrix
-        self.fallSpeed = fallSpeed
-        self.info = GameInfo() #class
-        self.currentPiece = currentPiece
-        self.nextPiece = nextPiece
+class Playfield:
+    def __init__(self):
+        self.blockMatrix = []
+        self.fallSpeed = 0.0
+        self.info = GameInfo()
+        self.currentPiece = None
+        self.nextPiece = None
 
-    def checkLineClears():
+    # def checkLineClears(self):
+        
 
-    def generateTetromino(): #Tetromino class
+    # def generateTetromino(self):
+        
 
-    def moveTetromino(): #Action class
+    # def moveTetromino(self, action: Action):
+        

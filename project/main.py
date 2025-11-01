@@ -1,16 +1,31 @@
-from playfield import PlayField
+from playfield import Playfield
 from gameinfo import GameInfo
-#from agent import Agent
+from action import Action
+
+class Main:
+    def __init__(self):
+        self.field = Playfield()
+        self.info = GameInfo()
+        self.agent = Agent()
+
+    # def displayGame(self):
 
 
-def displayGame():
+    # def getInput(self) -> Action:
+        
 
-def getInput():
+    # def startGame(self):
+        
 
-def startGame():
+    # def pause(self):
+        
 
-def pause():
+    # def endGame(self):
+        
 
-def endGame():
+    # def exit(self):
+        
 
-def exit():
+if __name__ == "__main__":
+    game = Main()
+    print("Eoseowa")
