@@ -69,8 +69,8 @@ while running:
         shape = field.currentPiece.getShapeArray()
         for dx, dy in shape:
             pygame.draw.rect(playfield_surface, field.currentPiece.color,
-                             ((field.currentPiece.coord[1] + dy) * CELL_SIZE,
-                              (field.currentPiece.coord[0] + dx) * CELL_SIZE,
+                             ((field.currentPiece.coord[0] + dx) * CELL_SIZE,
+                              (field.currentPiece.coord[1] + dy) * CELL_SIZE,
                               CELL_SIZE, CELL_SIZE))
 
     # draw gridlines

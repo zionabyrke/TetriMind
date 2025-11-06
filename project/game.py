@@ -37,7 +37,7 @@ class Playfield:
         #if no piece falling
         if not self.currentPiece:
             return
-
+        print(self.currentPiece.coord[0], self.currentPiece.coord[1])
         dx, dy = 0, 0
         if action == "left":
             dx = -1
@@ -76,9 +76,9 @@ class Playfield:
 
     def check_collision(self, new_x, new_y):
         for dx, dy in self.currentPiece.getShapeArray():
-            new_x+=dx
-            new_y+=dy
-            if new_x < 0 or >= COLUMNS or 0 > new_y >= ROWS:
+            dx+=new_x
+            dy+=new_y
+            if dx < 0 or dx >= COLUMNS or dy < 0 or dy >= ROWS:
                 return True
 
         return False
@@ -96,8 +96,8 @@ class Tetromino:
             "S": {
                 "color": GREEN,
                 "rotations": [
-                    [(0,1), (0,2), (1,0), (1,1)],
-                    [(0,0), (1,0), (1,1), (2,1)]
+                    [(1,0), (2,0), (0,1), (1,1)],
+                    [(0,0), (0,1), (1,1), (1,2)]
                 ]
             },
             "Z": {
