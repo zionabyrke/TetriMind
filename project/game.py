@@ -37,7 +37,7 @@ class Playfield:
         #if no piece falling
         if not self.currentPiece:
             return
-        print(self.currentPiece.coord[0], self.currentPiece.coord[1])
+
         dx, dy = 0, 0
         if action == "left":
             dx = -1
@@ -78,7 +78,7 @@ class Playfield:
         for dx, dy in self.currentPiece.getShapeArray():
             dx+=new_x
             dy+=new_y
-            print(dx, dy)
+
             if dx < 0 or dx >= COLUMNS or dy < 0 or dy >= ROWS:
                 return True
 
