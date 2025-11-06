@@ -57,9 +57,7 @@ class Playfield:
         new_x = self.currentPiece.coord[0] + dx
         new_y = self.currentPiece.coord[1] + dy
 
-        ## CHECK BOUNDS COLLISION (MOVE THIS TO COLLISION FEATURE)
-        # x: 0 to no. columns minus shape width + 1
-
+        ## CHECK BOUNDS COLLISION 
         if self.check_collision(new_x, new_y):
             return
 
@@ -68,21 +66,35 @@ class Playfield:
 
 
     # handles falling (called by main)
-    def update(self, dt): 
+    def update(self, dt, colorMatrix): 
         self.fallTimer += dt 
         if self.fallTimer >= self.fallSpeed * 1000: 
             self.fallTimer = 0 
             self.moveTetromino("down")
 
+            # check if we will place block by checking collisions from coords (x,y+1)
+            _coords = self.currentPiece.coord
+            if self.check_collision(_coords[0], _coords[1]+1):
+                self.place_block(_coords, colorMatrix)
+                self.generateTetromino()
+
+    
     def check_collision(self, new_x, new_y):
         for dx, dy in self.currentPiece.getShapeArray():
             dx+=new_x
             dy+=new_y
 
-            if dx < 0 or dx >= COLUMNS or dy < 0 or dy >= ROWS:
+            if dx < 0 or dx >= COLUMNS or dy < 0 or dy >= ROWS or self.blockMatrix[dy][dx] > 0:
                 return True
 
         return False
+
+    # places the blocks of current tetromino on block matrix at position self.blockMatrix[y][x]
+    def place_block(self, coords, colorMatrix):
+        for x, y in self.currentPiece.getShapeArray():
+            self.blockMatrix[coords[1] + y][coords[0] + x] = 1
+            colorMatrix[coords[1] + y][coords[0] + x] = self.currentPiece.color
+
 
 class Tetromino:
     def __init__(self, field):

@@ -10,6 +10,8 @@ pygame.display.set_caption("TetriMind")
 clock = pygame.time.Clock()
 info = GameInfo()
 field = Playfield(info)
+colorMatrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+
 # can have different font for different texts 
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
 font_header = pygame.font.SysFont("consolas", 18)
@@ -45,7 +47,7 @@ while running:
                 field.moveTetromino("hard_drop")
 
     ### GAME LOGIC SECTION
-    field.update(dt)
+    field.update(dt, colorMatrix)
     info.updateGameInfo()
 
     ### DISPLAY SECTION
@@ -58,7 +60,7 @@ while running:
     scoring_surface.fill(BLACK)
 
     # playfield blocks
-    for y, row in enumerate(field.blockMatrix):
+    for y, row in enumerate(colorMatrix):
         for x, color in enumerate(row):
             if color:
                 pygame.draw.rect(playfield_surface, color,
