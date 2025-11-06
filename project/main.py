@@ -67,13 +67,11 @@ while running:
     # current tetromino shape
     if field.currentPiece:
         shape = field.currentPiece.getShapeArray()
-        for y, row in enumerate(shape):
-            for x, cell in enumerate(row):
-                if cell:
-                    pygame.draw.rect(playfield_surface, field.currentPiece.color,
-                                     ((field.currentPiece.coord[0] + x) * CELL_SIZE,
-                                      (field.currentPiece.coord[1] + y) * CELL_SIZE,
-                                      CELL_SIZE, CELL_SIZE))
+        for dx, dy in shape:
+            pygame.draw.rect(playfield_surface, field.currentPiece.color,
+                             ((field.currentPiece.coord[1] + dy) * CELL_SIZE,
+                              (field.currentPiece.coord[0] + dx) * CELL_SIZE,
+                              CELL_SIZE, CELL_SIZE))
 
     # draw gridlines
     for col in range(1, COLUMNS):
@@ -112,7 +110,7 @@ while running:
     # scoring
     scoring_rect = scoring_surface.get_rect(bottomright=(WINDOW_WIDTH-PADDING, +CONTROLS_HEIGHT+SCORING_HEIGHT+PADDING*2+APPNAME_SIZE))
     screen.blit(scoring_surface, scoring_rect)
-
+    
     pygame.display.update()
 
 pygame.quit()

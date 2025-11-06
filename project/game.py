@@ -59,11 +59,13 @@ class Playfield:
 
         ## CHECK BOUNDS COLLISION (MOVE THIS TO COLLISION FEATURE)
         # x: 0 to no. columns minus shape width + 1
-        if 0 <= new_x < COLUMNS - len(self.currentPiece.getShapeArray()[0]) + 1:
-            self.currentPiece.coord[0] = new_x
-        # y: new_y must not exceed the no. of rows
-        if new_y < ROWS - len(self.currentPiece.getShapeArray()) + 1:
-            self.currentPiece.coord[1] = new_y
+
+        if self.check_collision(new_x, new_y):
+            return
+
+        self.currentPiece.coord[0] = new_x
+        self.currentPiece.coord[1] = new_y
+
 
     # handles falling (called by main)
     def update(self, dt): 
@@ -71,6 +73,15 @@ class Playfield:
         if self.fallTimer >= self.fallSpeed * 1000: 
             self.fallTimer = 0 
             self.moveTetromino("down")
+
+    def check_collision(self, new_x, new_y):
+        for dx, dy in self.currentPiece.getShapeArray():
+            new_x+=dx
+            new_y+=dy
+            if new_x < 0 or >= COLUMNS or 0 > new_y >= ROWS:
+                return True
+
+        return False
 
 class Tetromino:
     def __init__(self, field):
@@ -85,96 +96,55 @@ class Tetromino:
             "S": {
                 "color": GREEN,
                 "rotations": [
-                    [[0, 1, 1],
-                     [1, 1, 0],
-                     [0, 0, 0]],
-                    [[1, 0, 0],
-                     [1, 1, 0],
-                     [0, 1, 0]]
+                    [(0,1), (0,2), (1,0), (1,1)],
+                    [(0,0), (1,0), (1,1), (2,1)]
                 ]
             },
             "Z": {
                 "color": RED,
                 "rotations": [
-                    [[1, 1, 0],
-                     [0, 1, 1],
-                     [0, 0, 0]],
-                    [[0, 0, 1],
-                     [0, 1, 1],
-                     [0, 1, 0]]
+                    [(0,0), (0,1), (1,1), (1,2)],
+                    [(0,1), (1,0), (1,1), (2,0)]
                 ]
             },
             "J": {
                 "color": BLUE,
                 "rotations": [
-                    [[1, 0, 0],
-                     [1, 1, 1],
-                     [0, 0, 0]],
-                    [[0, 1, 1],
-                     [0, 1, 0],
-                     [0, 1, 0]],
-                    [[0, 0, 0],
-                     [1, 1, 1],
-                     [0, 0, 1]],
-                    [[0, 1, 0],
-                     [0, 1, 0],
-                     [1, 1, 0]]
+                    [(0,0), (1,0), (1,1), (1,2)],
+                    [(0,0), (0,1), (1,0), (2,0)],
+                    [(1,0), (1,1), (1,2), (2,2)],
+                    [(0,1), (1,1), (2,0), (2,1)]
                 ]
             },
             "L": {
                 "color": ORANGE,
                 "rotations": [
-                    [[0, 0, 1],
-                     [1, 1, 1],
-                     [0, 0, 0]],
-                    [[0, 1, 0],
-                     [0, 1, 0],
-                     [0, 1, 1]],
-                    [[0, 0, 0],
-                     [1, 1, 1],
-                     [1, 0, 0]],
-                    [[1, 1, 0],
-                     [0, 1, 0],
-                     [0, 1, 0]]
+                    [(0,2), (1,0), (1,1), (1,2)],
+                    [(0,0), (1,0), (2,0), (2,1)],
+                    [(1,0), (1,1), (1,2), (2,0)],
+                    [(0,0), (0,1), (1,1), (2,1)]
                 ]
             },
             "T": {
                 "color": PURPLE,
                 "rotations": [
-                    [[0, 1, 0],
-                     [1, 1, 1],
-                     [0, 0, 0]],
-                    [[0, 1, 0],
-                     [0, 1, 1],
-                     [0, 1, 0]],
-                    [[0, 0, 0],
-                     [1, 1, 1],
-                     [0, 1, 0]],
-                    [[0, 1, 0],
-                     [1, 1, 0],
-                     [0, 1, 0]]
+                    [(0,1), (1,0), (1,1), (1,2)],
+                    [(0,0), (1,0), (1,1), (2,0)],
+                    [(1,0), (1,1), (1,2), (2,1)],
+                    [(0,1), (1,0), (1,1), (2,1)]
                 ]
             },
             "O": {
                 "color": YELLOW,
                 "rotations": [
-                    [[0, 0, 0, 0],
-                     [0, 1, 1, 0],
-                     [0, 1, 1, 0],
-                     [0, 0, 0, 0]]
+                    [(0,0), (0,1), (1,0), (1,1)]
                 ]
             },
             "I": {
                 "color": CYAN,
                 "rotations": [
-                    [[0, 0, 0, 0],
-                     [0, 0, 0, 0],
-                     [1, 1, 1, 1],
-                     [0, 0, 0, 0]],
-                    [[0, 0, 1, 0],
-                     [0, 0, 1, 0],
-                     [0, 0, 1, 0],
-                     [0, 0, 1, 0]]
+                    [(0,0), (1,0), (2,0), (3,0)],
+                    [(0,0), (0,1), (0,2), (0,3)]
                 ]
             },
         }
