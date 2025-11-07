@@ -4,10 +4,9 @@ import datetime
 
 ### remaining features:
 # checkLineClears()
-# generateTetromino()
 # compute score, level, etc.
-# collision checker
 # hard drop action
+# Rotation collisions
 # others..
 
 class GameInfo:
@@ -53,32 +52,34 @@ class Playfield:
             # HARD DROP FEATURE HERE
             return
 
-        # if moves
-        new_x = self.currentPiece.coord[0] + dx
-        new_y = self.currentPiece.coord[1] + dy
-
         ## CHECK BOUNDS COLLISION 
-        if self.check_collision(new_x, new_y):
+        if self.check_collision(self.currentPiece.coord[0] + dx, self.currentPiece.coord[1] + dy):
             return
 
-        self.currentPiece.coord[0] = new_x
-        self.currentPiece.coord[1] = new_y
+        self.currentPiece.coord[0] += dx
+        self.currentPiece.coord[1] += dy
 
 
-    # handles falling (called by main)
+    # handles falling and checking for block placement (called by main)
     def update(self, dt, colorMatrix): 
         self.fallTimer += dt 
         if self.fallTimer >= self.fallSpeed * 1000: 
-            self.fallTimer = 0 
-            self.moveTetromino("down")
-
             # check if we will place block by checking collisions from coords (x,y+1)
+            self.fallTimer = 0 
             _coords = self.currentPiece.coord
+
             if self.check_collision(_coords[0], _coords[1]+1):
                 self.place_block(_coords, colorMatrix)
                 self.generateTetromino()
+                # Check game over
+                if self.check_collision(self.currentPiece.coord[0], self.currentPiece.coord[1]):
+                    print("GAME OVER")
+                    exit()
+                return
 
-    
+            self.moveTetromino("down")
+
+    # Returns true if a boundary or block collision was dected, false otherwise
     def check_collision(self, new_x, new_y):
         for dx, dy in self.currentPiece.getShapeArray():
             dx+=new_x
@@ -86,15 +87,13 @@ class Playfield:
 
             if dx < 0 or dx >= COLUMNS or dy < 0 or dy >= ROWS or self.blockMatrix[dy][dx] > 0:
                 return True
-
         return False
 
-    # places the blocks of current tetromino on block matrix at position self.blockMatrix[y][x]
+    # places the blocks of current tetromino on block matrix and the color matrix
     def place_block(self, coords, colorMatrix):
         for x, y in self.currentPiece.getShapeArray():
             self.blockMatrix[coords[1] + y][coords[0] + x] = 1
             colorMatrix[coords[1] + y][coords[0] + x] = self.currentPiece.color
-
 
 class Tetromino:
     def __init__(self, field):
