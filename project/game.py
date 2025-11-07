@@ -31,6 +31,10 @@ class Playfield:
     def generateTetromino(self):
         self.currentPiece = self.nextPiece
         self.nextPiece = Tetromino(self)
+        # Check game over
+        if self.check_collision(self.currentPiece.coord[0], self.currentPiece.coord[1], self.currentPiece.getShapeArray()):
+            print("GAME OVER")
+            exit()
 
     def moveTetromino(self, action):
         #if no piece falling
@@ -44,10 +48,13 @@ class Playfield:
             dx = 1
         elif action == MOVE_DOWN:
             dy = 1
+        # Rotating resets falltimer
         elif action == ROTATE_LEFT:
-            self.currentPiece.rotate(-1)
+            self.rotation_collision(-1)
+            return
         elif action == ROTATE_RIGHT:
-            self.currentPiece.rotate(1)
+            self.rotation_collision(1)
+            return
         elif action == HARD_DROP:
             # HARD DROP FEATURE HERE
             return
@@ -55,7 +62,7 @@ class Playfield:
             return
 
         ## CHECK BOUNDS COLLISION 
-        if self.check_collision(self.currentPiece.coord[0] + dx, self.currentPiece.coord[1] + dy):
+        if self.check_collision(self.currentPiece.coord[0] + dx, self.currentPiece.coord[1] + dy, self.currentPiece.getShapeArray()):
             return
 
         self.currentPiece.coord[0] += dx
@@ -70,25 +77,50 @@ class Playfield:
             _coords = self.currentPiece.coord
 
             # Check if we will place block by checking collisions from coords (x,y+1)
-            if self.check_collision(_coords[0], _coords[1]+1):
+            if self.check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self.place_block(_coords, colorMatrix)
                 self.generateTetromino()
-                # Check game over
-                if self.check_collision(self.currentPiece.coord[0], self.currentPiece.coord[1]):
-                    print("GAME OVER")
-                    exit()
             else:
                 self.moveTetromino(MOVE_DOWN)
 
     # Returns true if a boundary or block collision was dected, false otherwise
-    def check_collision(self, new_x, new_y):
-        for dx, dy in self.currentPiece.getShapeArray():
+    def check_collision(self, new_x, new_y, shape_array):
+        for dx, dy in shape_array:
             dx+=new_x
             dy+=new_y
 
             if dx < 0 or dx >= COLUMNS or dy < 0 or dy >= ROWS or self.blockMatrix[dy][dx] > 0:
                 return True
         return False
+
+    # checks for collisions whrn rotating, adjusts coordinates to fit rotation
+    def rotation_collision(self, rotation):
+        new_x = self.currentPiece.coord[0]
+        new_y = self.currentPiece.coord[1]
+        shape_array = self.currentPiece.getNewOrientation(rotation)
+        for dx, dy in shape_array:
+            dx+=self.currentPiece.coord[0]
+            dy+=self.currentPiece.coord[1]
+            
+            # make corrections to coordinates if rotations causes collisions
+            if dx < 0:
+                new_x+=1
+            elif dx >= COLUMNS:
+                new_x-=1
+            elif dy < 0:
+                new_y+=1
+            elif dy >= ROWS:
+                new_y-=1
+            elif self.blockMatrix[dy][dx] > 0:
+                new_y-=1
+
+        # check if new coordinates don't collide then we rotate
+        if not self.check_collision(new_x, new_y, shape_array):
+            self.currentPiece.coord[0] = new_x
+            self.currentPiece.coord[1] = new_y
+            self.currentPiece.rotate(rotation)
+            self.fallTimer = 0  # reset timer when rotating
+
 
     # places the blocks of current tetromino on block matrix and the color matrix
     def place_block(self, coords, colorMatrix):
@@ -176,3 +208,8 @@ class Tetromino:
     def rotate(self, direction):
         n = len(self.ShapeList[self.shapeType]["rotations"])
         self.rotation = (self.rotation + direction) % n
+
+    # get rotation info without rotating tetromino
+    def getNewOrientation(self, direction):
+        n = len(self.ShapeList[self.shapeType]["rotations"])
+        return self.ShapeList[self.shapeType]["rotations"][(self.rotation + direction) % n]
