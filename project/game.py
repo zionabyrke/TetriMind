@@ -38,18 +38,20 @@ class Playfield:
             return
 
         dx, dy = 0, 0
-        if action == "left":
+        if action == MOVE_LEFT:
             dx = -1
-        elif action == "right":
+        elif action == MOVE_RIGHT:
             dx = 1
-        elif action == "down":
+        elif action == MOVE_DOWN:
             dy = 1
-        elif action == "rotate_left":
+        elif action == ROTATE_LEFT:
             self.currentPiece.rotate(-1)
-        elif action == "rotate_right":
+        elif action == ROTATE_RIGHT:
             self.currentPiece.rotate(1)
-        elif action == "hard_drop":
+        elif action == HARD_DROP:
             # HARD DROP FEATURE HERE
+            return
+        else:
             return
 
         ## CHECK BOUNDS COLLISION 
@@ -64,10 +66,10 @@ class Playfield:
     def update(self, dt, colorMatrix): 
         self.fallTimer += dt 
         if self.fallTimer >= self.fallSpeed * 1000: 
-            # check if we will place block by checking collisions from coords (x,y+1)
             self.fallTimer = 0 
             _coords = self.currentPiece.coord
 
+            # Check if we will place block by checking collisions from coords (x,y+1)
             if self.check_collision(_coords[0], _coords[1]+1):
                 self.place_block(_coords, colorMatrix)
                 self.generateTetromino()
@@ -75,9 +77,8 @@ class Playfield:
                 if self.check_collision(self.currentPiece.coord[0], self.currentPiece.coord[1]):
                     print("GAME OVER")
                     exit()
-                return
-
-            self.moveTetromino("down")
+            else:
+                self.moveTetromino(MOVE_DOWN)
 
     # Returns true if a boundary or block collision was dected, false otherwise
     def check_collision(self, new_x, new_y):

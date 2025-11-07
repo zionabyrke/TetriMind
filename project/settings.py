@@ -1,5 +1,13 @@
 import pygame
 
+# movements
+MOVE_RIGHT   = pygame.K_RIGHT
+MOVE_LEFT    = pygame.K_LEFT
+MOVE_DOWN    = pygame.K_DOWN
+ROTATE_LEFT  = pygame.K_z
+ROTATE_RIGHT = pygame.K_x
+HARD_DROP    = pygame.K_SPACE
+
 # GAME SIZE
 COLUMNS = 10
 ROWS = 20

@@ -11,6 +11,8 @@ clock = pygame.time.Clock()
 info = GameInfo()
 field = Playfield(info)
 colorMatrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+held_keys = []
+hold_delay = 0
 
 # can have different font for different texts 
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
@@ -33,18 +35,31 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
+            # Left, right, and down keys can be held down, rotation and hard drop can't be held
             if event.key == pygame.K_LEFT:
-                field.moveTetromino("left")
+                held_keys.append(MOVE_LEFT)
             elif event.key == pygame.K_RIGHT:
-                field.moveTetromino("right")
+                held_keys.append(MOVE_RIGHT)
             elif event.key == pygame.K_DOWN:
-                field.moveTetromino("down")
-            elif event.key == pygame.K_z:
-                field.moveTetromino("rotate_left")
-            elif event.key == pygame.K_x:
-                field.moveTetromino("rotate_right")
-            elif event.key == pygame.K_SPACE:
-                field.moveTetromino("hard_drop")
+                held_keys.append(MOVE_DOWN)
+            # Move variables are mapped to their corresponding pygame.key in settings.py
+            # So this will move tetromino based on pressed key
+            field.moveTetromino(event.key)
+        elif event.type == pygame.KEYUP:
+            hold_delay = 0
+            if event.key == pygame.K_LEFT:
+                held_keys.remove(MOVE_LEFT)
+            elif event.key == pygame.K_RIGHT:
+                held_keys.remove(MOVE_RIGHT)
+            elif event.key == pygame.K_DOWN:
+                held_keys.remove(MOVE_DOWN)
+    
+    # Move based on held key
+    if held_keys:
+        hold_delay += 1
+        # Delay for 10 frames before player can fully hold, so it doesn't go too fast
+        if hold_delay > 10:
+            field.moveTetromino(held_keys[-1])
 
     ### GAME LOGIC SECTION
     field.update(dt, colorMatrix)
