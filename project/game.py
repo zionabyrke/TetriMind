@@ -79,6 +79,7 @@ class Playfield:
             # Check if we will place block by checking collisions from coords (x,y+1)
             if self.check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self.place_block(_coords, colorMatrix)
+                self.check_line_clears(colorMatrix)
                 self.generateTetromino()
             else:
                 self.moveTetromino(MOVE_DOWN)
@@ -121,12 +122,27 @@ class Playfield:
             self.currentPiece.rotate(rotation)
             self.fallTimer = 0  # reset timer when rotating
 
-
     # places the blocks of current tetromino on block matrix and the color matrix
     def place_block(self, coords, colorMatrix):
         for x, y in self.currentPiece.getShapeArray():
             self.blockMatrix[coords[1] + y][coords[0] + x] = 1
             colorMatrix[coords[1] + y][coords[0] + x] = self.currentPiece.color
+
+    # Called every time board gets updated
+    def check_line_clears(self, colorMatrix):
+        # Check for any completed line from the y pos of current piece up to y+4
+        line_clears = 0
+        for y in range(self.currentPiece.coord[1], ROWS):
+            if y > ROWS:
+                continue
+            if all([x == 1 for x in self.blockMatrix[y]]):
+                self.blockMatrix.pop(y)
+                colorMatrix.pop(y)
+                self.blockMatrix.insert(0, [0 for _ in range(COLUMNS)])
+                colorMatrix.insert(0, [BLACK for _ in range(COLUMNS)])
+                line_clears+=1
+        return line_clears
+
 
 class Tetromino:
     def __init__(self, field):
