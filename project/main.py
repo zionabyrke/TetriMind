@@ -102,9 +102,11 @@ while running:
     title_text = font_title.render("TETRIMIND", True, LINE_COLOR)
     screen.blit(title_text, (RIGHTBAR_WIDTH+PADDING*2 + (GAME_WIDTH-title_text.get_width())/2, PADDING/2))
 
-    score_text = font_header.render(f"      SCORE\n        {info.playerScore}", True, LINE_COLOR)
-    level_text = font_header.render(f"      LEVEL\n        {info.gameLevel}", True, LINE_COLOR)
+    score_text = font_header.render("     SCORE:", True, LINE_COLOR)
+    score_amount = font_header.render(f"       {info.playerScore}", True, LINE_COLOR)
+    level_text = font_header.render(f"     LEVEL: {info.gameLevel}", True, LINE_COLOR)
     score_surface.blit(score_text, (PADDING, PADDING))
+    score_surface.blit(score_amount, (PADDING, PADDING+30))
     score_surface.blit(level_text, (PADDING, PADDING + 80))
 
     controls_text = font.render(CONTROLS_TEXT, True, LINE_COLOR)

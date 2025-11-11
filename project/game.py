@@ -18,19 +18,35 @@ class GameInfo:
     def updateGameInfo(self):
         self.elapsedTime = datetime.datetime.now().time()
 
+    def updateScore(self, lines_cleared):
+        if lines_cleared == 1:
+            self.playerScore+=40
+        elif lines_cleared == 2:
+            self.playerScore+=100
+        elif lines_cleared == 3:
+            self.playerScore+=300
+        elif lines_cleared == 4:
+            self.playerScore+=1200
+
 class Playfield:
     def __init__(self, info):
         self.info = info
         self.blockMatrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
-        self.currentPiece = Tetromino(self)
-        self.nextPiece = Tetromino(self)
-        self.fallSpeed = FRAMEPERSEC / 100
+        # Blocks fall every 36 frames
+        self.fallSpeed = 36 / FRAMEPERSEC
         self.fallTimer = 0
+        self.bag = list(Tetromino.ShapeList.keys())
+        random.shuffle(self.bag)
+        self.currentPiece = Tetromino(self.bag.pop())
+        self.nextPiece = Tetromino(self.bag.pop())
 
     # generate again after 1st line clearing
     def generateTetromino(self):
+        if not self.bag:
+            self.bag = list(Tetromino.ShapeList.keys())
+            random.shuffle(self.bag)
         self.currentPiece = self.nextPiece
-        self.nextPiece = Tetromino(self)
+        self.nextPiece = Tetromino(self.bag.pop())
         # Check game over
         if self.check_collision(self.currentPiece.coord[0], self.currentPiece.coord[1], self.currentPiece.getShapeArray()):
             print("GAME OVER")
@@ -48,6 +64,7 @@ class Playfield:
             dx = 1
         elif action == MOVE_DOWN:
             dy = 1
+            self.fallTimer = 0
         # Rotating resets falltimer
         elif action == ROTATE_LEFT:
             self.rotation_collision(-1)
@@ -79,7 +96,8 @@ class Playfield:
             # Check if we will place block by checking collisions from coords (x,y+1)
             if self.check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self.place_block(_coords, colorMatrix)
-                self.check_line_clears(colorMatrix)
+                lines_cleared = self.check_line_clears(colorMatrix)
+                self.info.updateScore(lines_cleared)
                 self.generateTetromino()
             else:
                 self.moveTetromino(MOVE_DOWN)
@@ -132,8 +150,8 @@ class Playfield:
     def check_line_clears(self, colorMatrix):
         # Check for any completed line from the y pos of current piece up to y+4
         line_clears = 0
-        for y in range(self.currentPiece.coord[1], ROWS):
-            if y > ROWS:
+        for y in range(self.currentPiece.coord[1], self.currentPiece.coord[1]+4):
+            if y >= ROWS:
                 continue
             if all([x == 1 for x in self.blockMatrix[y]]):
                 self.blockMatrix.pop(y)
@@ -141,100 +159,97 @@ class Playfield:
                 self.blockMatrix.insert(0, [0 for _ in range(COLUMNS)])
                 colorMatrix.insert(0, [BLACK for _ in range(COLUMNS)])
                 line_clears+=1
+
         return line_clears
 
 
 class Tetromino:
-    def __init__(self, field):
-        self.field = field # playfield object
+    #shapeList disctionary
+    ShapeList = {
+        "S": {
+            "color": GREEN,
+            "rotations": [
+                [(1,0), (2,0), (0,1), (1,1)],
+                [(1,0), (1,1), (2,1), (2,2)],
+                [(1,1), (2,1), (0,2), (1,2)],
+                [(0,0), (0,1), (1,1), (1,2)]
+            ]
+        },
+        "Z": {
+            "color": RED,
+            "rotations": [
+                [(0,0), (1,0), (1,1), (2,1)],
+                [(2,0), (1,1), (2,1), (1,2)],
+                [(0,1), (1,1), (1,2), (2,2)],
+                [(1,0), (0,1), (1,1), (0,2)]
+            ]
+        },
+        "J": {
+            "color": BLUE,
+            "rotations": [
+                [(0,0), (0,1), (1,1), (2,1)],
+                [(1,0), (2,0), (1,1), (1,2)],
+                [(0,1), (1,1), (2,1), (2,2)],
+                [(1,0), (1,1), (0,2), (1,2)]
+            ]
+        },
+        "L": {
+            "color": ORANGE,
+            "rotations": [
+                [(2,0), (0,1), (1,1), (2,1)],
+                [(1,0), (1,1), (1,2), (2,2)],
+                [(0,1), (1,1), (2,1), (0,2)],
+                [(0,0), (1,0), (1,1), (1,2)]
+            ]
+        },
+        "T": {
+            "color": PURPLE,
+            "rotations": [
+                [(1,0), (0,1), (1,1), (2,1)],
+                [(1,0), (1,1), (2,1), (1,2)],
+                [(0,1), (1,1), (2,1), (1,2)],
+                [(1,0), (0,1), (1,1), (1,2)]
+            ]
+        },
+        "O": {
+            "color": YELLOW,
+            "rotations": [
+                [(1,0), (2,0), (1,1), (2,1)],
+                [(1,0), (2,0), (1,1), (2,1)],
+                [(1,0), (2,0), (1,1), (2,1)],
+                [(1,0), (2,0), (1,1), (2,1)]
+            ]
+        },
+        "I": {
+            "color": CYAN,
+            "rotations": [
+                [(0,1), (1,1), (2,1), (3,1)],
+                [(2,0), (2,1), (2,2), (2,3)],
+                [(0,2), (1,2), (2,2), (3,2)],
+                [(1,0), (1,1), (1,2), (1,3)]
+            ]
+        },
+    }
+
+    def __init__(self, shape):
         # middle spawn column/2
         self.coord = [COLUMNS // 2 - 2, 0]
         # index of orientation inside ShapeList
         self.rotation = 0
-
-        #shapeList disctionary
-        self.ShapeList = {
-            "S": {
-                "color": GREEN,
-                "rotations": [
-                    [(1,0), (2,0), (0,1), (1,1)],
-                    [(1,0), (1,1), (2,1), (2,2)],
-                    [(1,1), (2,1), (0,2), (1,2)],
-                    [(0,0), (0,1), (1,1), (1,2)]
-                ]
-            },
-            "Z": {
-                "color": RED,
-                "rotations": [
-                    [(0,0), (1,0), (1,1), (2,1)],
-                    [(2,0), (1,1), (2,1), (1,2)],
-                    [(0,1), (1,1), (2,1), (2,2)],
-                    [(1,0), (0,1), (1,1), (0,2)]
-                ]
-            },
-            "J": {
-                "color": BLUE,
-                "rotations": [
-                    [(0,0), (0,1), (1,1), (2,1)],
-                    [(1,0), (2,0), (1,1), (1,2)],
-                    [(0,1), (1,1), (2,1), (2,2)],
-                    [(1,0), (1,1), (0,2), (1,2)]
-                ]
-            },
-            "L": {
-                "color": ORANGE,
-                "rotations": [
-                    [(2,0), (0,1), (1,1), (2,1)],
-                    [(1,0), (1,1), (1,2), (2,2)],
-                    [(0,1), (1,1), (2,1), (0,2)],
-                    [(0,0), (1,0), (1,1), (1,2)]
-                ]
-            },
-            "T": {
-                "color": PURPLE,
-                "rotations": [
-                    [(1,0), (0,1), (1,1), (2,1)],
-                    [(1,0), (1,1), (2,1), (1,2)],
-                    [(0,1), (1,1), (2,1), (1,2)],
-                    [(1,0), (0,1), (1,1), (1,2)]
-                ]
-            },
-            "O": {
-                "color": YELLOW,
-                "rotations": [
-                    [(0,0), (0,1), (1,0), (1,1)],
-                    [(0,0), (0,1), (1,0), (1,1)],
-                    [(0,0), (0,1), (1,0), (1,1)],
-                    [(0,0), (0,1), (1,0), (1,1)]
-                ]
-            },
-            "I": {
-                "color": CYAN,
-                "rotations": [
-                    [(0,1), (1,1), (2,1), (3,1)],
-                    [(2,0), (2,1), (2,2), (2,3)],
-                    [(0,2), (1,2), (2,2), (3,2)],
-                    [(1,0), (1,1), (1,2), (1,3)]
-                ]
-            },
-        }
-
         # each class randomly chooses its shape & color
         # .keys() returns shape code S,Z,J,L,T,O,I
-        self.shapeType = random.choice(list(self.ShapeList.keys()))
-        self.color = self.ShapeList[self.shapeType]["color"]
+        self.shapeType = shape
+        self.color = Tetromino.ShapeList[self.shapeType]["color"]
 
     # returns the shape array
     def getShapeArray(self):
-        return self.ShapeList[self.shapeType]["rotations"][self.rotation]
+        return Tetromino.ShapeList[self.shapeType]["rotations"][self.rotation]
 
     # changes the rotation orientation
     # in circular manner
     def rotate(self, direction):
-        n = len(self.ShapeList[self.shapeType]["rotations"])
-        self.rotation = (self.rotation + direction) % n
+        self.rotation = (self.rotation + direction) % 4
 
     # get rotation info without rotating tetromino
     def getNewOrientation(self, direction):
-        n = len(self.ShapeList[self.shapeType]["rotations"])
-        return self.ShapeList[self.shapeType]["rotations"][(self.rotation + direction) % n]
+        return Tetromino.ShapeList[self.shapeType]["rotations"][(self.rotation + direction) % 4]
