@@ -25,6 +25,7 @@ preview_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT*PREVIEW_HEIGHT_FRA
 score_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT*SCORE_HEIGHT_FRACTION))
 controls_surface = pygame.Surface((LEFTBAR_WIDTH, CONTROLS_HEIGHT))
 scoring_surface = pygame.Surface((LEFTBAR_WIDTH, SCORING_HEIGHT))
+ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 
 ##### GAME LOOP
 running = True
@@ -44,7 +45,7 @@ while running:
                 held_keys.append(MOVE_DOWN)
             # Move variables are mapped to their corresponding pygame.key in settings.py
             # So this will move tetromino based on pressed key
-            field.moveTetromino(event.key)
+            field.moveTetromino(event.key, colorMatrix)
         elif event.type == pygame.KEYUP:
             hold_delay = 0
             if event.key == pygame.K_LEFT:
@@ -59,7 +60,7 @@ while running:
         hold_delay += 1
         # Delay for 10 frames before player can fully hold, so it doesn't go too fast
         if hold_delay > 10:
-            field.moveTetromino(held_keys[-1])
+            field.moveTetromino(held_keys[-1], colorMatrix)
 
     ### GAME LOGIC SECTION
     field.update(dt, colorMatrix)
@@ -81,14 +82,25 @@ while running:
                 pygame.draw.rect(playfield_surface, color,
                                  (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
-    # current tetromino shape
+    # current tetromino pieces
     if field.currentPiece:
         shape = field.currentPiece.getShapeArray()
+        ghost_coords = field.ghost_piece()
+        ghost_color = pygame.Color(field.currentPiece.color)
+        ghost_color.a = 64 #25% x 255 = 64 adjust
+
+        # tetromino piece
         for dx, dy in shape:
             pygame.draw.rect(playfield_surface, field.currentPiece.color,
                              ((field.currentPiece.coord[0] + dx) * CELL_SIZE,
                               (field.currentPiece.coord[1] + dy) * CELL_SIZE,
                               CELL_SIZE, CELL_SIZE))
+        
+        # ghost piece 
+        ghost_surface.fill(ghost_color)
+        for gx, gy in ghost_coords:
+            playfield_surface.blit(ghost_surface, (gx*CELL_SIZE, gy*CELL_SIZE))
+
 
     # draw gridlines
     for col in range(1, COLUMNS):
