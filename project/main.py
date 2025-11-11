@@ -44,7 +44,7 @@ while running:
                 held_keys.append(MOVE_DOWN)
             # Move variables are mapped to their corresponding pygame.key in settings.py
             # So this will move tetromino based on pressed key
-            field.moveTetromino(event.key)
+            field.moveTetromino(event.key, colorMatrix)
         elif event.type == pygame.KEYUP:
             hold_delay = 0
             if event.key == pygame.K_LEFT:
@@ -59,7 +59,7 @@ while running:
         hold_delay += 1
         # Delay for 10 frames before player can fully hold, so it doesn't go too fast
         if hold_delay > 10:
-            field.moveTetromino(held_keys[-1])
+            field.moveTetromino(held_keys[-1], colorMatrix)
 
     ### GAME LOGIC SECTION
     field.update(dt, colorMatrix)

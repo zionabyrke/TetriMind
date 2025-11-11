@@ -36,7 +36,7 @@ class Playfield:
             print("GAME OVER")
             exit()
 
-    def moveTetromino(self, action):
+    def moveTetromino(self, action, colorMatrix):
         #if no piece falling
         if not self.currentPiece:
             return
@@ -56,7 +56,7 @@ class Playfield:
             self.rotation_collision(1)
             return
         elif action == HARD_DROP:
-            # HARD DROP FEATURE HERE
+            self.hard_drop(colorMatrix)
             return
         else:
             return
@@ -81,7 +81,7 @@ class Playfield:
                 self.place_block(_coords, colorMatrix)
                 self.generateTetromino()
             else:
-                self.moveTetromino(MOVE_DOWN)
+                self.moveTetromino(MOVE_DOWN, colorMatrix)
 
     # Returns true if a boundary or block collision was dected, false otherwise
     def check_collision(self, new_x, new_y, shape_array):
@@ -127,6 +127,20 @@ class Playfield:
         for x, y in self.currentPiece.getShapeArray():
             self.blockMatrix[coords[1] + y][coords[0] + x] = 1
             colorMatrix[coords[1] + y][coords[0] + x] = self.currentPiece.color
+
+    # hard drop feature
+    def hard_drop(self, colorMatrix):
+        x=self.currentPiece.coord[0]
+        y=self.currentPiece.coord[1]
+        shape_array = self.currentPiece.getShapeArray()
+        
+        #find col depth until collision
+        while not self.check_collision(x, y+1, shape_array):
+            y+=1
+
+        #lock piece imeeediately
+        self.place_block((x,y), colorMatrix)
+        self.currentPiece.coord = [x,y] #update
 
 class Tetromino:
     def __init__(self, field):
