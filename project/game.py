@@ -175,6 +175,7 @@ class Playfield:
         #lock piece imeeediately
         self.place_block((x,y), colorMatrix)
         self.currentPiece.coord = [x,y] #update
+        self.fallTimer = self.fallSpeed*1000
 
     def ghost_piece(self):
         x=self.currentPiece.coord[0]
