@@ -64,7 +64,7 @@ while running:
 
     ### GAME LOGIC SECTION
     field.update(dt, colorMatrix)
-    info.updateGameInfo()
+    info.updateGameInfo(dt)
 
     ### DISPLAY SECTION
     # fills
@@ -101,7 +101,14 @@ while running:
         for gx, gy in ghost_coords:
             playfield_surface.blit(ghost_surface, (gx*CELL_SIZE, gy*CELL_SIZE))
 
-
+    # next tetromino piece
+    if field.nextPiece:
+        shape = field.nextPiece.getShapeArray()
+        for x, y in shape:
+            pygame.draw.rect(preview_surface, field.nextPiece.color,
+                             (x*CELL_SIZE)+(45), PADDING+(y*CELL_SIZE)+30,
+                             CELL_SIZE, CELL_SIZE))
+        
     # draw gridlines
     for col in range(1, COLUMNS):
         x = col * CELL_SIZE
@@ -120,11 +127,20 @@ while running:
     score_surface.blit(score_text, (PADDING, PADDING))
     score_surface.blit(score_amount, (PADDING, PADDING+30))
     score_surface.blit(level_text, (PADDING, PADDING + 80))
+    time_text = font_header.render(f"     TIME: %02d:%02d" % ((info.elapsedTime//1000)//60, (info.elapsedTime//1000)%60), True, LINE_COLOR)
+    score_surface.blit(time_text, (PADDING, PADDING + 130))
 
-    controls_text = font.render(CONTROLS_TEXT, True, LINE_COLOR)
-    controls_surface.blit(controls_text, (PADDING, PADDING))
-    scoring_text = font.render(SCORING_TEXT, True, LINE_COLOR)
-    scoring_surface.blit(scoring_text, (PADDING, PADDING))
+    preview_text = font_header.render("     NEXT", True, LINE_COLOR)
+    preview_surface.blit(preview_text, (PADDING, PADDING))
+
+    # draw control and surface text line by line
+    for x, text in enumerate(CONTROLS_TEXT):
+        controls_text = font.render(text, True, LINE_COLOR)
+        controls_surface.blit(controls_text, (PADDING, PADDING+(x*20)))
+    
+    for x, text in enumerate(SCORING_TEXT):
+        scoring_text = font.render(text, True, LINE_COLOR)
+        scoring_surface.blit(scoring_text, (PADDING, PADDING+(x*20)))
 
     ## display surfaces
     screen.blit(playfield_surface, (RIGHTBAR_WIDTH + PADDING * 2, PADDING+APPNAME_SIZE))
