@@ -13,10 +13,10 @@ class GameInfo:
     def __init__(self):
         self.playerScore = 0
         self.gameLevel = 1
-        self.elapsedTime = datetime.time(0, 0, 0)
+        self.elapsedTime = 0
 
-    def updateGameInfo(self):
-        self.elapsedTime = datetime.datetime.now().time()
+    def updateGameInfo(self, dt):
+        self.elapsedTime += dt
 
     def updateScore(self, lines_cleared):
         if lines_cleared == 1:
@@ -52,7 +52,7 @@ class Playfield:
             print("GAME OVER")
             exit()
 
-    def moveTetromino(self, action):
+    def moveTetromino(self, action, colorMatrix):
         #if no piece falling
         if not self.currentPiece:
             return
@@ -73,7 +73,7 @@ class Playfield:
             self.rotation_collision(1)
             return
         elif action == HARD_DROP:
-            # HARD DROP FEATURE HERE
+            self.hard_drop(colorMatrix)
             return
         else:
             return
@@ -100,7 +100,7 @@ class Playfield:
                 self.info.updateScore(lines_cleared)
                 self.generateTetromino()
             else:
-                self.moveTetromino(MOVE_DOWN)
+                self.moveTetromino(MOVE_DOWN, colorMatrix)
 
     # Returns true if a boundary or block collision was dected, false otherwise
     def check_collision(self, new_x, new_y, shape_array):
@@ -161,6 +161,38 @@ class Playfield:
                 line_clears+=1
 
         return line_clears
+
+    # hard drop feature
+    def hard_drop(self, colorMatrix):
+        x=self.currentPiece.coord[0]
+        y=self.currentPiece.coord[1]
+        shape_array=self.currentPiece.getShapeArray()
+            
+        #find col depth until collision
+        while not self.check_collision(x, y+1, shape_array):
+            y+=1
+
+        #lock piece imeeediately
+        self.place_block((x,y), colorMatrix)
+        self.currentPiece.coord = [x,y] #update
+        self.fallTimer = self.fallSpeed*1000
+
+    def ghost_piece(self):
+        x=self.currentPiece.coord[0]
+        y=self.currentPiece.coord[1]
+        shape_array=self.currentPiece.getShapeArray()
+
+        # simulate hard drop
+        while not self.check_collision(x, y+1, shape_array):
+            y+=1
+
+        # adjust y coord[1] as ghost piece
+        ghostPiece = [] #temp coord list
+        for dx, dy in shape_array:
+            # return piece dropped coords
+            ghostPiece.append((x+dx, y+dy))
+
+        return ghostPiece #display on main
 
 
 class Tetromino:

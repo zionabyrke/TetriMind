@@ -24,8 +24,10 @@ SCORE_HEIGHT_FRACTION = 1-PREVIEW_HEIGHT_FRACTION
 LEFTBAR_WIDTH = 180
 CONTROLS_HEIGHT = 110
 SCORING_HEIGHT= 130
-CONTROLS_TEXT = "CONTROLS\n← →  Move\n↓  Soft Drop\nx z  Rotate\nSPACE  Hard Drop"
-SCORING_TEXT = "SCORING\n1 Line: 40 × Level\n2 Lines: 100 × Level\n3 Line: 300 × Level\n4 Line: 1200 × Level\nHard Drop: +2/cell"
+#CONTROLS_TEXT = "CONTROLS\n← →  Move\n↓  Soft Drop\nx z  Rotate\nSPACE  Hard Drop"
+CONTROLS_TEXT = ["CONTROLS", "← →  Move", "↓  Soft Drop", "x z  Rotate", "SPACE  Hard Drop"]
+#SCORING_TEXT = "SCORING\n1 Line: 40 × Level\n2 Lines: 100 × Level\n3 Line: 300 × Level\n4 Line: 1200 × Level\nHard Drop: +2/cell"
+SCORING_TEXT = ["SCORING", "1 Line: 40", "2 Lines: 100", "3 Line: 300" , "4 Line: 1200"]
 
 # WINDOW
 PADDING = 10 #BORDER

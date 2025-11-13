@@ -25,6 +25,7 @@ preview_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT*PREVIEW_HEIGHT_FRA
 score_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT*SCORE_HEIGHT_FRACTION))
 controls_surface = pygame.Surface((LEFTBAR_WIDTH, CONTROLS_HEIGHT))
 scoring_surface = pygame.Surface((LEFTBAR_WIDTH, SCORING_HEIGHT))
+ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 
 ##### GAME LOOP
 running = True
@@ -44,7 +45,7 @@ while running:
                 held_keys.append(MOVE_DOWN)
             # Move variables are mapped to their corresponding pygame.key in settings.py
             # So this will move tetromino based on pressed key
-            field.moveTetromino(event.key)
+            field.moveTetromino(event.key, colorMatrix)
         elif event.type == pygame.KEYUP:
             hold_delay = 0
             if event.key == pygame.K_LEFT:
@@ -59,11 +60,11 @@ while running:
         hold_delay += 1
         # Delay for 10 frames before player can fully hold, so it doesn't go too fast
         if hold_delay > 10:
-            field.moveTetromino(held_keys[-1])
+            field.moveTetromino(held_keys[-1], colorMatrix)
 
     ### GAME LOGIC SECTION
     field.update(dt, colorMatrix)
-    info.updateGameInfo()
+    info.updateGameInfo(dt)
 
     ### DISPLAY SECTION
     # fills
@@ -81,15 +82,33 @@ while running:
                 pygame.draw.rect(playfield_surface, color,
                                  (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
-    # current tetromino shape
+    # current tetromino pieces
     if field.currentPiece:
         shape = field.currentPiece.getShapeArray()
+        ghost_coords = field.ghost_piece()
+        ghost_color = pygame.Color(field.currentPiece.color)
+        ghost_color.a = 64 #25% x 255 = 64 adjust
+
+        # tetromino piece
         for dx, dy in shape:
             pygame.draw.rect(playfield_surface, field.currentPiece.color,
                              ((field.currentPiece.coord[0] + dx) * CELL_SIZE,
                               (field.currentPiece.coord[1] + dy) * CELL_SIZE,
                               CELL_SIZE, CELL_SIZE))
+        
+        # ghost piece 
+        ghost_surface.fill(ghost_color)
+        for gx, gy in ghost_coords:
+            playfield_surface.blit(ghost_surface, (gx*CELL_SIZE, gy*CELL_SIZE))
 
+    # next tetromino piece
+    if field.nextPiece:
+        shape = field.nextPiece.getShapeArray()
+        for x, y in shape:
+            pygame.draw.rect(preview_surface, field.nextPiece.color,
+                             ((x*CELL_SIZE)+(45), PADDING+(y*CELL_SIZE)+30,
+                             CELL_SIZE, CELL_SIZE))
+        
     # draw gridlines
     for col in range(1, COLUMNS):
         x = col * CELL_SIZE
@@ -108,11 +127,20 @@ while running:
     score_surface.blit(score_text, (PADDING, PADDING))
     score_surface.blit(score_amount, (PADDING, PADDING+30))
     score_surface.blit(level_text, (PADDING, PADDING + 80))
+    time_text = font_header.render(f"     TIME: %02d:%02d" % ((info.elapsedTime//1000)//60, (info.elapsedTime//1000)%60), True, LINE_COLOR)
+    score_surface.blit(time_text, (PADDING, PADDING + 130))
 
-    controls_text = font.render(CONTROLS_TEXT, True, LINE_COLOR)
-    controls_surface.blit(controls_text, (PADDING, PADDING))
-    scoring_text = font.render(SCORING_TEXT, True, LINE_COLOR)
-    scoring_surface.blit(scoring_text, (PADDING, PADDING))
+    preview_text = font_header.render("     NEXT", True, LINE_COLOR)
+    preview_surface.blit(preview_text, (PADDING, PADDING))
+
+    # draw control and surface text line by line
+    for x, text in enumerate(CONTROLS_TEXT):
+        controls_text = font.render(text, True, LINE_COLOR)
+        controls_surface.blit(controls_text, (PADDING, PADDING+(x*20)))
+    
+    for x, text in enumerate(SCORING_TEXT):
+        scoring_text = font.render(text, True, LINE_COLOR)
+        scoring_surface.blit(scoring_text, (PADDING, PADDING+(x*20)))
 
     ## display surfaces
     screen.blit(playfield_surface, (RIGHTBAR_WIDTH + PADDING * 2, PADDING+APPNAME_SIZE))
