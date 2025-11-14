@@ -27,6 +27,7 @@ class Agent:
     def chooseAction(self, field):
         # random moves - TEST
         self.test_action_timer += 1
+        self.rand_action = None
 
         #  random move every 40 frames
         if self.test_action_timer > 50:

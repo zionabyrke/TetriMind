@@ -74,12 +74,14 @@ while running:
     score_text = font_small.render(f"Score: {info.playerScore}", True, LINE_COLOR)
     level_text = font_small.render(f"Level: {info.gameLevel}", True, LINE_COLOR)
     preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
-    states_text = font_small.render(f"Holes: {h}\nBumpiness: {b}\nHeights:\n{temp}", True, LINE_COLOR)
+    states_text = [f"Holes: {h}", f"Bumpiness: {b}", "Heights:", f"{temp}"]
+    for x, text in enumerate(states_text):
+        state_text = font_small.render(text, True, LINE_COLOR)
+        sidebar_surface.blit(state_text, (PADDING, PADDING+150+(x*20)))
 
     sidebar_surface.blit(score_text, (PADDING, PADDING))
     sidebar_surface.blit(level_text, (PADDING, PADDING+16))
     sidebar_surface.blit(preview_text, (PADDING, PADDING+16+16))
-    sidebar_surface.blit(states_text, (PADDING, PADDING+150))
     screen.blit(playfield_surface, (PADDING, PADDING + APPNAME_SIZE))
     screen.blit(sidebar_surface, (GAME_WIDTH + PADDING * 2, PADDING + APPNAME_SIZE))
     screen.blit(title_text, (PADDING, PADDING))
