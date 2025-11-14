@@ -10,6 +10,10 @@ pygame.display.set_caption("TetriMind")
 clock = pygame.time.Clock()
 info = GameInfo()
 field = Playfield(info)
+colorMatrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+held_keys = []
+hold_delay = 0
+
 # can have different font for different texts 
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
 font_header = pygame.font.SysFont("consolas", 18)
@@ -21,6 +25,7 @@ preview_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT*PREVIEW_HEIGHT_FRA
 score_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT*SCORE_HEIGHT_FRACTION))
 controls_surface = pygame.Surface((LEFTBAR_WIDTH, CONTROLS_HEIGHT))
 scoring_surface = pygame.Surface((LEFTBAR_WIDTH, SCORING_HEIGHT))
+ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 
 ##### GAME LOOP
 running = True
@@ -31,22 +36,35 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
+            # Left, right, and down keys can be held down, rotation and hard drop can't be held
             if event.key == pygame.K_LEFT:
-                field.moveTetromino("left")
+                held_keys.append(MOVE_LEFT)
             elif event.key == pygame.K_RIGHT:
-                field.moveTetromino("right")
+                held_keys.append(MOVE_RIGHT)
             elif event.key == pygame.K_DOWN:
-                field.moveTetromino("down")
-            elif event.key == pygame.K_z:
-                field.moveTetromino("rotate_left")
-            elif event.key == pygame.K_x:
-                field.moveTetromino("rotate_right")
-            elif event.key == pygame.K_SPACE:
-                field.moveTetromino("hard_drop")
+                held_keys.append(MOVE_DOWN)
+            # Move variables are mapped to their corresponding pygame.key in settings.py
+            # So this will move tetromino based on pressed key
+            field.moveTetromino(event.key, colorMatrix)
+        elif event.type == pygame.KEYUP:
+            hold_delay = 0
+            if event.key == pygame.K_LEFT:
+                held_keys.remove(MOVE_LEFT)
+            elif event.key == pygame.K_RIGHT:
+                held_keys.remove(MOVE_RIGHT)
+            elif event.key == pygame.K_DOWN:
+                held_keys.remove(MOVE_DOWN)
+    
+    # Move based on held key
+    if held_keys:
+        hold_delay += 1
+        # Delay for 10 frames before player can fully hold, so it doesn't go too fast
+        if hold_delay > 10:
+            field.moveTetromino(held_keys[-1], colorMatrix)
 
     ### GAME LOGIC SECTION
-    field.update(dt)
-    info.updateGameInfo()
+    field.update(dt, colorMatrix)
+    info.updateGameInfo(dt)
 
     ### DISPLAY SECTION
     # fills
@@ -58,23 +76,39 @@ while running:
     scoring_surface.fill(BLACK)
 
     # playfield blocks
-    for y, row in enumerate(field.blockMatrix):
+    for y, row in enumerate(colorMatrix):
         for x, color in enumerate(row):
             if color:
                 pygame.draw.rect(playfield_surface, color,
                                  (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
-    # current tetromino shape
+    # current tetromino pieces
     if field.currentPiece:
         shape = field.currentPiece.getShapeArray()
-        for y, row in enumerate(shape):
-            for x, cell in enumerate(row):
-                if cell:
-                    pygame.draw.rect(playfield_surface, field.currentPiece.color,
-                                     ((field.currentPiece.coord[0] + x) * CELL_SIZE,
-                                      (field.currentPiece.coord[1] + y) * CELL_SIZE,
-                                      CELL_SIZE, CELL_SIZE))
+        ghost_coords = field.ghost_piece()
+        ghost_color = pygame.Color(field.currentPiece.color)
+        ghost_color.a = 64 #25% x 255 = 64 adjust
 
+        # tetromino piece
+        for dx, dy in shape:
+            pygame.draw.rect(playfield_surface, field.currentPiece.color,
+                             ((field.currentPiece.coord[0] + dx) * CELL_SIZE,
+                              (field.currentPiece.coord[1] + dy) * CELL_SIZE,
+                              CELL_SIZE, CELL_SIZE))
+        
+        # ghost piece 
+        ghost_surface.fill(ghost_color)
+        for gx, gy in ghost_coords:
+            playfield_surface.blit(ghost_surface, (gx*CELL_SIZE, gy*CELL_SIZE))
+
+    # next tetromino piece
+    if field.nextPiece:
+        shape = field.nextPiece.getShapeArray()
+        for x, y in shape:
+            pygame.draw.rect(preview_surface, field.nextPiece.color,
+                             ((x*CELL_SIZE)+(45), PADDING+(y*CELL_SIZE)+30,
+                             CELL_SIZE, CELL_SIZE))
+        
     # draw gridlines
     for col in range(1, COLUMNS):
         x = col * CELL_SIZE
@@ -87,15 +121,26 @@ while running:
     title_text = font_title.render("TETRIMIND", True, LINE_COLOR)
     screen.blit(title_text, (RIGHTBAR_WIDTH+PADDING*2 + (GAME_WIDTH-title_text.get_width())/2, PADDING/2))
 
-    score_text = font_header.render(f"      SCORE\n        {info.playerScore}", True, LINE_COLOR)
-    level_text = font_header.render(f"      LEVEL\n        {info.gameLevel}", True, LINE_COLOR)
+    score_text = font_header.render("     SCORE:", True, LINE_COLOR)
+    score_amount = font_header.render(f"       {info.playerScore}", True, LINE_COLOR)
+    level_text = font_header.render(f"     LEVEL: {info.gameLevel}", True, LINE_COLOR)
     score_surface.blit(score_text, (PADDING, PADDING))
+    score_surface.blit(score_amount, (PADDING, PADDING+30))
     score_surface.blit(level_text, (PADDING, PADDING + 80))
+    time_text = font_header.render(f"     TIME: %02d:%02d" % ((info.elapsedTime//1000)//60, (info.elapsedTime//1000)%60), True, LINE_COLOR)
+    score_surface.blit(time_text, (PADDING, PADDING + 130))
 
-    controls_text = font.render(CONTROLS_TEXT, True, LINE_COLOR)
-    controls_surface.blit(controls_text, (PADDING, PADDING))
-    scoring_text = font.render(SCORING_TEXT, True, LINE_COLOR)
-    scoring_surface.blit(scoring_text, (PADDING, PADDING))
+    preview_text = font_header.render("     NEXT", True, LINE_COLOR)
+    preview_surface.blit(preview_text, (PADDING, PADDING))
+
+    # draw control and surface text line by line
+    for x, text in enumerate(CONTROLS_TEXT):
+        controls_text = font.render(text, True, LINE_COLOR)
+        controls_surface.blit(controls_text, (PADDING, PADDING+(x*20)))
+    
+    for x, text in enumerate(SCORING_TEXT):
+        scoring_text = font.render(text, True, LINE_COLOR)
+        scoring_surface.blit(scoring_text, (PADDING, PADDING+(x*20)))
 
     ## display surfaces
     screen.blit(playfield_surface, (RIGHTBAR_WIDTH + PADDING * 2, PADDING+APPNAME_SIZE))
@@ -112,7 +157,7 @@ while running:
     # scoring
     scoring_rect = scoring_surface.get_rect(bottomright=(WINDOW_WIDTH-PADDING, +CONTROLS_HEIGHT+SCORING_HEIGHT+PADDING*2+APPNAME_SIZE))
     screen.blit(scoring_surface, scoring_rect)
-
+    
     pygame.display.update()
 
 pygame.quit()
