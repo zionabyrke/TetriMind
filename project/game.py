@@ -54,11 +54,10 @@ class GameInfo:
     def __init__(self):
         self.playerScore = 0
         self.gameLevel = 1
-        self.elapsedTime = datetime.time(0, 0, 0)
-        self.field = None
+        self.elapsedTime = 0
 
-    def updateGameInfo(self):
-        self.elapsedTime = datetime.datetime.now().time()
+    def updateGameInfo(self, dt):
+        self.elapsedTime += dt
 
     def _updateScore(self, lines_cleared):
         self.playerScore += LINE_SCORES.get(lines_cleared, 0)
