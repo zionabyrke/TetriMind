@@ -33,7 +33,7 @@ while running:
 
     #game logic
     field.update(dt, colorMatrix)
-    info.updateGameInfo()
+    info.updateGameInfo(dt)
     h, b, colHeights = agent.getGameState()  # game states
     temp = " ".join(map(str, colHeights)) #no space and brackets
 
