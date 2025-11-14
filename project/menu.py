@@ -1,5 +1,6 @@
 import pygame
 import sys
+from music import play_menu_music, stop_menu_music
 
 # Initialize Pygame
 pygame.init()
@@ -100,10 +101,14 @@ class TetriMindMenu:
         self.label_font = pygame.font.Font(None, 28)
         self.desc_font = pygame.font.Font(None, 20)
         
+        # Music Path
+        play_menu_music("project/assets/music/Tetris Theme.mp3")
+        
         # Game state
         self.show_setup = False
-        self.game_mode = "player"  # player or ai
-        self.ai_difficulty = "medium"  # low, medium, hard, expert
+        self.game_mode = "player"  
+        self.ai_difficulty = "medium" 
+        self.start_game = False  
         
         # Main menu button
         self.start_button = Button(
@@ -139,7 +144,7 @@ class TetriMindMenu:
                 360,
                 60,
                 "Player vs AI",
-                "Compete against AI",
+                "Compete against AI (Coming Soon)",
                 selected=(self.game_mode == "ai"),
                 label_color=PURPLE
             )
@@ -197,7 +202,7 @@ class TetriMindMenu:
         
         # Instructions
         instructions = [
-            "Use z x or arrow keys to move & rotate",
+            "Use arrow keys & z x to move & rotate",
             "Press SPACE for hard drop"
         ]
         
@@ -212,7 +217,7 @@ class TetriMindMenu:
         overlay.fill(BLACK)
         self.screen.blit(overlay, (0, 0))
         
-        # Dialog box - adjust height based on game mode
+        # Dialog box 
         dialog_width = 400
         dialog_height = 360 if self.game_mode == "player" else 620
         dialog_x = (WINDOW_WIDTH - dialog_width) // 2
@@ -280,7 +285,7 @@ class TetriMindMenu:
         reset_button.draw(self.screen, self.small_font)
         play_button.draw(self.screen, self.small_font)
         
-        # Store buttons for click detection
+        # Store buttons 
         self.reset_button = reset_button
         self.play_button = play_button
         
@@ -316,19 +321,26 @@ class TetriMindMenu:
             return
         
         if self.play_button.is_clicked(pos):
-            print(f"Starting game - Mode: {self.game_mode}, Difficulty: {self.ai_difficulty}")
-            self.show_setup = False
+            if self.game_mode == "player":
+                print(f"Starting game - Mode: {self.game_mode}")
+                self.start_game = True  
+                self.show_setup = False
+            else:
+                print("AI mode not implemented yet!")
             return
         
     def run(self):
         running = True
         
-        while running:
+        while running and not self.start_game:
             mouse_pos = pygame.mouse.get_pos()
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                    stop_menu_music(fade_ms=500)
+                    pygame.display.quit()
+                    sys.exit()
                     
                 if event.type == pygame.MOUSEMOTION:
                     if not self.show_setup:
@@ -357,9 +369,18 @@ class TetriMindMenu:
             pygame.display.flip()
             self.clock.tick(FPS)
         
-        pygame.quit()
-        sys.exit()
+        # Stop music when exiting menu
+        stop_menu_music(fade_ms=1000)
+        
+        # Return the selected settings
+        return self.game_mode, self.ai_difficulty
+
+def show_menu():
+    menu = TetriMindMenu()
+    game_mode, ai_difficulty = menu.run()
+    return game_mode, ai_difficulty
 
 if __name__ == "__main__":
     menu = TetriMindMenu()
-    menu.run()
+    game_mode, ai_difficulty = menu.run()
+    print(f"Game would start with mode: {game_mode}, difficulty: {ai_difficulty}")
