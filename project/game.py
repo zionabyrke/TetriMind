@@ -220,31 +220,47 @@ class Playfield:
         return False
 
     # checks for collisions whrn rotating, adjusts coordinates to fit rotation
-    def _rotation_collision(self, rotation):
-        new_x, new_y = self.currentPiece.coord
-        shape_array = self.currentPiece.getNewOrientation(rotation)
-        for dx, dy in shape_array:
-            dx+=self.currentPiece.coord[0]
-            dy+=self.currentPiece.coord[1]
-            
-            # make corrections to coordinates if rotations causes collisions
-            if dx < 0:
-                new_x+=1
-            elif dx >= COLUMNS:
-                new_x-=1
-            elif dy < 0:
-                new_y+=1
-            elif dy >= ROWS:
-                new_y-=1
-            elif self.blockMatrix[dy][dx] > 0:
-                new_y-=1
+    # based on super roation system of modern tetris games
+    def _rotation_collision(self, direction):
+        piece = self.currentPiece
+        # List of wall kick test types
+        type_1 = [(0,0), (-1, 0), (-1,-1), (0, 2), (-1, 2)]
+        type_2 = [(0,0), (1, 0), (1,1), (0, -2), (1, -2)]
+        type_3 = [(0,0), (1, 0), (1,-1), (0, 2), (1, 2)]
+        type_4 = [(0,0), (-1, 0), (-1,1), (0, -2), (-1, -2)]
 
-        # check if new coordinates don't collide then we rotate
-        if not self._check_collision(new_x, new_y, shape_array):
-            self.currentPiece.coord[0] = new_x
-            self.currentPiece.coord[1] = new_y
-            self.currentPiece.rotate(rotation)
-            self.fallTimer = 0  # reset timer when rotating
+        # keys from dict are formed with the tuple: (current_rotation, new_rotation)
+        # the table for the rotations can be seen from https://tetris.wiki/Super_Rotation_System#Wall_Kicks
+        wall_kick_dict = {(0, 1): type_1, (1, 0): type_2, (1, 2): type_2, (2, 1): type_1,
+            (2, 3): type_3, (3, 2): type_4, (3, 0): type_4, (0, 3): type_3}
+        # Wall kick test types and dict but for the I piece
+        I_type_1 = [(0,0), (-2,0), (1,0), (-2,1), (1,-2)]
+        I_type_2 = [(0,0), (2,0), (-1,0), (2,-1), (1,2)]
+        I_type_3 = [(0,0), (-1,0), (2,0), (-1,-2), (2,1)]
+        I_type_4 = [(0,0), (1,0), (-2,0), (1,2), (-2, -1)]
+
+        I_wall_kick_dict = {(0, 1): I_type_1, (1, 0): I_type_2, (1, 2): I_type_3, (2, 1): I_type_4,
+            (2, 3): I_type_2, (3, 2): I_type_1, (3, 0): I_type_4, (0, 3): I_type_3}
+        
+        new_rotation = (piece.rotation+direction)%4
+        test_coords = []
+        if piece.shapeType == "O":
+            return
+        elif piece.shapeType == "I":
+            test_coords = I_wall_kick_dict.get((piece.rotation, new_rotation))
+        else:   #wall kicks for all other pieces
+            test_coords = wall_kick_dict.get((piece.rotation, new_rotation))
+
+        # test for valid coordinates derived using wall kick dict and rotate if a test is passed
+        rotation_image = piece.getNewOrientation(direction)
+        curr_x, curr_y = piece.coord
+        for dx, dy in test_coords:
+            if not self._check_collision(curr_x+dx, curr_y+dy, rotation_image):
+                piece.coord[0] = curr_x+dx
+                piece.coord[1] = curr_y+dy
+                piece.rotate(direction)
+                self.fallTimer = 0
+                return
 
     # places the blocks of current tetromino on block matrix and the color matrix
     def _place_block(self, coords, colorMatrix):
