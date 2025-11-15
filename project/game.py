@@ -2,7 +2,8 @@ from settings import *
 import random
 import datetime
 
-LINE_SCORES = {1: 40, 2: 100, 3: 300, 4: 1200}
+LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
+T_SPIN = {1:800, 2: 1200, 3: 1600}
 BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
 #shapeList disctionary
 ShapeList = {
@@ -49,6 +50,25 @@ ShapeList = {
             [(1,0), (1,1), (1,2), (1,3)]]
     }
 }
+# List of wall kick test types
+type_1 = [(0,0), (-1, 0), (-1,-1), (0, 2), (-1, 2)]
+type_2 = [(0,0), (1, 0), (1,1), (0, -2), (1, -2)]
+type_3 = [(0,0), (1, 0), (1,-1), (0, 2), (1, 2)]
+type_4 = [(0,0), (-1, 0), (-1,1), (0, -2), (-1, -2)]
+
+# keys from dict are formed with the tuple: (current_rotation, new_rotation)
+# the table for the rotations can be seen from https://tetris.wiki/Super_Rotation_System#Wall_Kicks
+wall_kick_dict = {(0, 1): type_1, (1, 0): type_2, (1, 2): type_2, (2, 1): type_1,
+    (2, 3): type_3, (3, 2): type_4, (3, 0): type_4, (0, 3): type_3}
+
+# Wall kick test types and dict but for the I piece
+I_type_1 = [(0,0), (-2,0), (1,0), (-2,1), (1,-2)]
+I_type_2 = [(0,0), (2,0), (-1,0), (2,-1), (1,2)]
+I_type_3 = [(0,0), (-1,0), (2,0), (-1,-2), (2,1)]
+I_type_4 = [(0,0), (1,0), (-2,0), (1,2), (-2, -1)]
+
+I_wall_kick_dict = {(0, 1): I_type_1, (1, 0): I_type_2, (1, 2): I_type_3, (2, 1): I_type_4,
+    (2, 3): I_type_2, (3, 2): I_type_1, (3, 0): I_type_4, (0, 3): I_type_3}
 
 class GameInfo:
     def __init__(self):
@@ -59,8 +79,12 @@ class GameInfo:
     def updateGameInfo(self, dt):
         self.elapsedTime += dt
 
-    def _updateScore(self, lines_cleared):
-        self.playerScore += LINE_SCORES.get(lines_cleared, 0)
+    def _updateScore(self, lines_cleared, is_tspin):
+        if is_tspin:
+            self.playerScore += T_SPIN.get(lines_cleared, 0)
+        else:
+            self.playerScore += LINE_SCORES.get(lines_cleared, 0)
+
 
 
 class GameState:
@@ -106,6 +130,7 @@ class Playfield:
         random.shuffle(self.bag)
         self.currentPiece = Tetromino(self.bag.pop())
         self.nextPiece = Tetromino(self.bag.pop())
+        self.last_action = 0
 
     def generateTetromino(self):
         if not self.bag:
@@ -122,6 +147,7 @@ class Playfield:
         piece = self.currentPiece
         if not piece: #if no piece falling
             return
+        self.last_action = action
 
         if action == HARD_DROP:
             return self._hard_drop(colorMatrix)
@@ -159,7 +185,9 @@ class Playfield:
             if self._check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self._place_block(_coords, colorMatrix)
                 lines_cleared = self._check_line_clears(colorMatrix)
-                self.info._updateScore(lines_cleared)
+                self.info._updateScore(lines_cleared, 
+                                       ((self.last_action == ROTATE_LEFT or self.last_action ==  ROTATE_RIGHT) 
+                                        and self.currentPiece.shapeType) == "T")
                 self.generateTetromino()
             else:
                 self.moveTetromino(MOVE_DOWN, colorMatrix)
@@ -223,24 +251,6 @@ class Playfield:
     # based on super roation system of modern tetris games
     def _rotation_collision(self, direction):
         piece = self.currentPiece
-        # List of wall kick test types
-        type_1 = [(0,0), (-1, 0), (-1,-1), (0, 2), (-1, 2)]
-        type_2 = [(0,0), (1, 0), (1,1), (0, -2), (1, -2)]
-        type_3 = [(0,0), (1, 0), (1,-1), (0, 2), (1, 2)]
-        type_4 = [(0,0), (-1, 0), (-1,1), (0, -2), (-1, -2)]
-
-        # keys from dict are formed with the tuple: (current_rotation, new_rotation)
-        # the table for the rotations can be seen from https://tetris.wiki/Super_Rotation_System#Wall_Kicks
-        wall_kick_dict = {(0, 1): type_1, (1, 0): type_2, (1, 2): type_2, (2, 1): type_1,
-            (2, 3): type_3, (3, 2): type_4, (3, 0): type_4, (0, 3): type_3}
-        # Wall kick test types and dict but for the I piece
-        I_type_1 = [(0,0), (-2,0), (1,0), (-2,1), (1,-2)]
-        I_type_2 = [(0,0), (2,0), (-1,0), (2,-1), (1,2)]
-        I_type_3 = [(0,0), (-1,0), (2,0), (-1,-2), (2,1)]
-        I_type_4 = [(0,0), (1,0), (-2,0), (1,2), (-2, -1)]
-
-        I_wall_kick_dict = {(0, 1): I_type_1, (1, 0): I_type_2, (1, 2): I_type_3, (2, 1): I_type_4,
-            (2, 3): I_type_2, (3, 2): I_type_1, (3, 0): I_type_4, (0, 3): I_type_3}
         
         new_rotation = (piece.rotation+direction)%4
         test_coords = []
@@ -274,8 +284,8 @@ class Playfield:
         line_clears = 0
         for y in range(self.currentPiece.coord[1], self.currentPiece.coord[1]+4):
             if y >= ROWS:
-                continue
-            if all([x == 1 for x in self.blockMatrix[y]]):
+                break
+            if all(self.blockMatrix[y]):
                 self.blockMatrix.pop(y)
                 colorMatrix.pop(y)
                 self.blockMatrix.insert(0, [0 for _ in range(COLUMNS)])
