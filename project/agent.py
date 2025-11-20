@@ -42,7 +42,8 @@ class Agent:
                     best_action = (rot, dx, HARD_DROP)
 
         # return converted to action
-        return self._convert_to_action(best_action)
+        return best_action
+        #return self._convert_to_action(best_action)
 
     ### Agent helpers (Private methods)
     def _evaluate_state(self, field):
