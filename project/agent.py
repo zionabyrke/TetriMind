@@ -43,7 +43,6 @@ class Agent:
 
         # return converted to action
         return best_action
-        #return self._convert_to_action(best_action)
 
     ### Agent helpers (Private methods)
     def _evaluate_state(self, field):
@@ -155,23 +154,4 @@ class Agent:
         _field.blockMatrix = new_matrix
 
         return _field
-
-    def _convert_to_action(self, best_action):
-        if best_action == None: # no move to make
-            return HARD_DROP
-
-        rot, dx, drop = best_action
-        # if rotation is NOT None = needed
-        if rot == ROTATE_LEFT:
-            return ROTATE_LEFT
-        if rot == ROTATE_RIGHT:
-            return ROTATE_RIGHT
-
-        # sideways is NOT None = needed
-        if dx < 0:
-            return MOVE_LEFT
-        if dx > 0:
-            return MOVE_RIGHT
-
-        return HARD_DROP 
 
