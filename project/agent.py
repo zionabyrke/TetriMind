@@ -51,7 +51,7 @@ class Agent:
         # rewards
         reward = (
             # rewards
-            + 0 # wala maisip
+            + field.info.playerScore # wala maisip
 
             # penalties
             -3      * holes          # fewer holes = better
