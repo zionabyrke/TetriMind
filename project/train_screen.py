@@ -22,11 +22,14 @@ font_small = pygame.font.SysFont("consolas", 14)
 playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
+piece_per_second = 1
+move_time = 0
+
 ### game loop
 running = True
 while running:
     dt = clock.tick(FRAMEPERSEC)
-
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -38,9 +41,19 @@ while running:
     temp = " ".join(map(str, colHeights)) #no space and brackets
 
     ######   agent actions HERE
-    action = agent.chooseAction(field)
-    if action:
-        field.moveTetromino(action, colorMatrix)
+    if(move_time <= piece_per_second):
+        move_time += dt/1000
+    else:
+        move_time = 0   # reset move time
+        action = agent.chooseAction(field)
+        field.moveTetromino(action[0], colorMatrix)
+        for dx in range(abs(action[1])):
+            if action[1] < 0:
+                field.moveTetromino(MOVE_LEFT, colorMatrix)
+            else:
+                field.moveTetromino(MOVE_RIGHT, colorMatrix)
+        field.moveTetromino(action[2], colorMatrix)
+
 
     screen.fill(GRAY)
     playfield_surface.fill(BLACK)

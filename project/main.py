@@ -21,7 +21,7 @@ settings.GAME_MODE = game_mode
 settings.AI_DIFFICULTY = ai_difficulty
 
 # game screen window
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT+40))
 pygame.display.set_caption("TetriMind")
 
 # components
@@ -46,14 +46,33 @@ controls_surface = pygame.Surface((LEFTBAR_WIDTH, CONTROLS_HEIGHT))
 scoring_surface = pygame.Surface((LEFTBAR_WIDTH, SCORING_HEIGHT))
 ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 
+#buttons
+pause_rect = pygame.Rect(RIGHTBAR_WIDTH + PADDING*2, GAME_HEIGHT+APPNAME_SIZE+PADDING,
+                GAME_WIDTH//3, 30 ) #30 height
+reset_rect = pygame.Rect(pause_rect.x + GAME_WIDTH//3, GAME_HEIGHT+APPNAME_SIZE+PADDING,
+                GAME_WIDTH//3, 30 ) #30 height
+menu_rect = pygame.Rect(pause_rect.x + (GAME_WIDTH//3)*2, GAME_HEIGHT+APPNAME_SIZE+PADDING,
+                GAME_WIDTH//3, 30 ) #30 height
+
 ##### GAME LOOP
 running = True
+paused = False
 while running:
     dt = clock.tick(FRAMEPERSEC)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        # pause , reset button
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if pause_rect.collidepoint(event.pos):
+                paused = not paused
+            if reset_rect.collidepoint(event.pos):
+                pass # RESET METHOD HERE #########
+            if menu_rect.collidepoint(event.pos):
+                pass # MENU SCREEN HERE
+        elif paused == True:
+            continue # no moving actions till resumed
         elif event.type == pygame.KEYDOWN:
             # Left, right, and down keys can be held down, rotation and hard drop can't be held
             if event.key == pygame.K_LEFT:
@@ -82,8 +101,12 @@ while running:
             field.moveTetromino(held_keys[-1], colorMatrix)
 
     ### GAME LOGIC SECTION
-    field.update(dt, colorMatrix)
-    info.updateGameInfo(dt)
+    if not paused: #update only if not paused
+        field.update(dt, colorMatrix)
+        info.updateGameInfo(dt)
+        pause_label = "Pause"
+    else: 
+        pause_label = "Resume"
 
     ### DISPLAY SECTION
     screen.fill(GRAY)
@@ -162,6 +185,25 @@ while running:
 
     ## display surfaces
     screen.blit(playfield_surface, (RIGHTBAR_WIDTH + PADDING * 2, PADDING+APPNAME_SIZE))
+    # button box
+    pygame.draw.rect(screen, BLACK, pause_rect) #fill
+    pygame.draw.rect(screen, GRAY, pause_rect, 4) #4px border/gaps
+    pause_text= font_header.render(pause_label, True, LINE_COLOR)
+    screen.blit(pause_text, (pause_rect.x + (pause_rect.width-pause_text.get_width())// 2, 
+                            pause_rect.y + (pause_rect.height-pause_text.get_height())// 2))
+
+    pygame.draw.rect(screen, BLACK, reset_rect)#fill
+    pygame.draw.rect(screen, GRAY, reset_rect, 4)#4px border/gaps
+    reset_text= font_header.render("Reset", True, LINE_COLOR)
+    screen.blit(reset_text, (reset_rect.x + (reset_rect.width-reset_text.get_width())// 2,
+                            reset_rect.y + (reset_rect.height-reset_text.get_height())// 2))
+
+    pygame.draw.rect(screen, BLACK, menu_rect)#fill
+    pygame.draw.rect(screen, GRAY, menu_rect, 4)#4px border/gaps
+    menu_text = font_header.render("Menu", True, LINE_COLOR)
+    screen.blit(menu_text , (menu_rect.x + (menu_rect.width-menu_text.get_width())// 2,
+                            menu_rect.y + (menu_rect.height-menu_text.get_height())// 2 ))
+    
     # score
     score_rect = score_surface.get_rect(topleft=(PADDING, PADDING+APPNAME_SIZE))
     screen.blit(score_surface, score_rect)
