@@ -45,7 +45,7 @@ while running:
         move_time += dt/1000
     else:
         move_time = 0   # reset move time
-        action = agent.chooseAction(field)
+        _, action = agent.chooseAction(field, depth=2) # depth = piece lookahead
         field.moveTetromino(action[0], colorMatrix)
         for dx in range(abs(action[1])):
             if action[1] < 0:

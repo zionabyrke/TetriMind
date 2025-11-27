@@ -2,7 +2,7 @@ from settings import *
 import random
 import datetime
 
-LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
+LINE_SCORES = {0:0, 1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
 BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
 #shapeList disctionary
@@ -131,6 +131,7 @@ class Playfield:
         self.currentPiece = Tetromino(self.bag.pop())
         self.nextPiece = Tetromino(self.bag.pop())
         self.last_action = 0
+        self.lines_cleared = 0
 
     def generateTetromino(self):
         if not self.bag:
@@ -184,8 +185,8 @@ class Playfield:
             # Check if we will place block by checking collisions from coords (x,y+1)
             if self._check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self._place_block(_coords, colorMatrix)
-                lines_cleared = self._check_line_clears(colorMatrix)
-                self.info._updateScore(lines_cleared, 
+                self.lines_cleared = self._check_line_clears(colorMatrix)
+                self.info._updateScore(self.lines_cleared, 
                                        ((self.last_action == ROTATE_LEFT or self.last_action ==  ROTATE_RIGHT) 
                                         and self.currentPiece.shapeType) == "T")
                 self.generateTetromino()

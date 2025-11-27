@@ -1,4 +1,4 @@
-from game import GameInfo, Playfield, Tetromino, GameState
+from game import *
 from settings import *
 
 class Agent:
@@ -17,10 +17,14 @@ class Agent:
         state = self.currentState
         return state.holes, state.bumpiness, state.columnHeights
 
-    def chooseAction(self, field):
+    def chooseAction(self, field, depth=1):
         best_action = None
         best_value = -999999 # lowest by default
-        piece = field.currentPiece
+
+        # base case for recursion:
+        if depth <= 0:
+            return self._evaluate_state(field), None
+        
 
         # try every rotation actions
         for rot in [ROTATE_LEFT, ROTATE_RIGHT, None]:
@@ -36,21 +40,40 @@ class Agent:
                 # evaluate reward for the action
                 value = self._evaluate_state(simu_final)
 
+                # recursion for nextPiece
+                # simulate next piece spawn
+                next_field = self._copy_env(simu_final)
+                next_field.currentPiece = Tetromino(next_field.nextPiece.shapeType)
+                next_field.currentPiece.coord = next_field.nextPiece.coord[:]
+                next_field.currentPiece.rotation = next_field.nextPiece.rotation
+
+                # randomize next-next piece (your game already does this)
+                next_field.bag = list(ShapeList.keys())
+                random.shuffle(next_field.bag)
+
+                # recursion
+                next_value, _ = self.chooseAction(next_field, depth - 1)
+                total_value = value + next_value
+
                 # looking for max value (min penalty) out of each state
-                if value > best_value:
-                    best_value = value #ie:(-1, -1, HARD_DROP) left-> rotLeft-> drop
+                if total_value > best_value:
+                    best_value = total_value #ie:(-1, -1, HARD_DROP) left-> rotLeft-> drop
                     best_action = (rot, dx, HARD_DROP)
 
         # return converted to action
-        return best_action
+        return best_value, best_action
 
     ### Agent helpers (Private methods)
     def _evaluate_state(self, field):
         holes, bumpiness, heights = field.getFieldFeatures()
+        # --- PERFECT CLEAR BONUS ---
+        perfect_clear_bonus = 1000 if all(sum(row) == 0 for row in field.blockMatrix) else 0
         # rewards
         reward = (
             # rewards
-            + 0 # wala maisip
+            + LINE_SCORES.get(field.lines_cleared, 0)
+            + T_SPIN.get(field.lines_cleared, 0)
+            + perfect_clear_bonus
 
             # penalties
             -3      * holes          # fewer holes = better
@@ -60,30 +83,30 @@ class Agent:
 
         return reward
 
-    def _copy_field(self, field):
-        _field = Playfield(field.info)
+    def _copy_env(self, field):
+        env = Playfield(field.info)
 
         # duplicate currentPiece as cp
         cp = field.currentPiece
-        _field.currentPiece = Tetromino(cp.shapeType)
-        _field.currentPiece.coord = cp.coord[:]
-        _field.currentPiece.rotation = cp.rotation
+        env.currentPiece = Tetromino(cp.shapeType)
+        env.currentPiece.coord = cp.coord[:]
+        env.currentPiece.rotation = cp.rotation
 
         # duplicate nextPiece as np
         np = field.nextPiece
-        _field.nextPiece = Tetromino(np.shapeType)
-        _field.nextPiece.coord = np.coord[:]
-        _field.nextPiece.rotation = np.rotation
+        env.nextPiece = Tetromino(np.shapeType)
+        env.nextPiece.coord = np.coord[:]
+        env.nextPiece.rotation = np.rotation
 
-        _field.blockMatrix = [row[:] for row in field.blockMatrix]
+        env.blockMatrix = [row[:] for row in field.blockMatrix]
         
-        return _field
+        return env
 
     def _simulate_rotation(self, field, rot):
         if rot is None: # no rotation is needed
             return field
 
-        _field = self._copy_field(field)
+        _field = self._copy_env(field)
         _orientation = 0
 
         if rot == ROTATE_LEFT:
@@ -100,7 +123,7 @@ class Agent:
         if dx == 0: # no sideways needed
             return field
 
-        _field = self._copy_field(field)
+        _field = self._copy_env(field)
         piece = _field.currentPiece
         num_steps = abs(dx) # relative to COLUMN//2 leftmost (-)
         direction = 0
@@ -124,7 +147,7 @@ class Agent:
 
     # hard drop + line clearing
     def _simulate_hard_drop(self, field):
-        _field = self._copy_field(field)
+        _field = self._copy_env(field)
         piece = _field.currentPiece
         x, y = piece.coord
         shape = piece.getShapeArray()
