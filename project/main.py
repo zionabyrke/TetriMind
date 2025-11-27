@@ -1,24 +1,18 @@
 from settings import *
 from game import Playfield, GameInfo
 from menu import show_menu
-
 import time
-import settings #module iba sa settings.py
-
+ 
 pygame.init()
 
 ## Menu 
-game_mode, ai_difficulty = show_menu()
+GAME_MODE, AI_DIFFICULTY = show_menu()
 # Small delay to ensure menu window closes cleanly
 time.sleep(0.1)
 
 # Re-initialize pygame display for the game
 pygame.display.quit()
 pygame.display.init()
-
-# Initialize settings based on menu selection
-settings.GAME_MODE = game_mode
-settings.AI_DIFFICULTY = ai_difficulty
 
 # game screen window
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT+40))
@@ -47,11 +41,11 @@ scoring_surface = pygame.Surface((LEFTBAR_WIDTH, SCORING_HEIGHT))
 ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 
 #buttons
-pause_rect = pygame.Rect(RIGHTBAR_WIDTH + PADDING*2, GAME_HEIGHT+APPNAME_SIZE+PADDING,
+pause_rect = pygame.Rect((WINDOW_WIDTH-GAME_WIDTH)//2, GAME_HEIGHT+APPNAME_SIZE+PADDING*4,
                 GAME_WIDTH//3, 30 ) #30 height
-reset_rect = pygame.Rect(pause_rect.x + GAME_WIDTH//3, GAME_HEIGHT+APPNAME_SIZE+PADDING,
+reset_rect = pygame.Rect(pause_rect.x + GAME_WIDTH//3, GAME_HEIGHT+APPNAME_SIZE+PADDING*4,
                 GAME_WIDTH//3, 30 ) #30 height
-menu_rect = pygame.Rect(pause_rect.x + (GAME_WIDTH//3)*2, GAME_HEIGHT+APPNAME_SIZE+PADDING,
+menu_rect = pygame.Rect(pause_rect.x + (GAME_WIDTH//3)*2, GAME_HEIGHT+APPNAME_SIZE+PADDING*4,
                 GAME_WIDTH//3, 30 ) #30 height
 
 ##### GAME LOOP
@@ -160,7 +154,7 @@ while running:
 
     # Title text
     title_text = font_title.render("TETRIMIND", True, LINE_COLOR)
-    screen.blit(title_text, (RIGHTBAR_WIDTH+PADDING*2 + (GAME_WIDTH-title_text.get_width())/2, PADDING/2))
+    screen.blit(title_text, ((WINDOW_WIDTH-GAME_WIDTH)//2 + (GAME_WIDTH-title_text.get_width())/2, 4*PADDING))
 
     score_text = font_header.render("     SCORE:", True, LINE_COLOR)
     score_amount = font_header.render(f"       {info.playerScore}", True, LINE_COLOR)
@@ -184,7 +178,7 @@ while running:
         scoring_surface.blit(scoring_text, (PADDING, PADDING+(x*20)))
 
     ## display surfaces
-    screen.blit(playfield_surface, (RIGHTBAR_WIDTH + PADDING * 2, PADDING+APPNAME_SIZE))
+    screen.blit(playfield_surface, ((WINDOW_WIDTH-GAME_WIDTH)//2, 4*PADDING+APPNAME_SIZE))
     # button box
     pygame.draw.rect(screen, BLACK, pause_rect) #fill
     pygame.draw.rect(screen, GRAY, pause_rect, 4) #4px border/gaps
@@ -205,17 +199,17 @@ while running:
                             menu_rect.y + (menu_rect.height-menu_text.get_height())// 2 ))
     
     # score
-    score_rect = score_surface.get_rect(topleft=(PADDING, PADDING+APPNAME_SIZE))
+    score_rect = score_surface.get_rect(topleft=((WINDOW_WIDTH-GAME_WIDTH)//2 - PADDING - RIGHTBAR_WIDTH, 4*PADDING+APPNAME_SIZE))
     screen.blit(score_surface, score_rect)
     # preview
     preview_rect = preview_surface.get_rect(
-        bottomleft=(PADDING, score_rect.bottom + preview_surface.get_height() + PADDING))
+        bottomleft=((WINDOW_WIDTH-GAME_WIDTH)//2 - PADDING - RIGHTBAR_WIDTH, score_rect.bottom + preview_surface.get_height() + PADDING))
     screen.blit(preview_surface, preview_rect)
     # controls
-    controls_rect = controls_surface.get_rect(topright=(WINDOW_WIDTH-PADDING, PADDING+APPNAME_SIZE))
+    controls_rect = controls_surface.get_rect(topright=((WINDOW_WIDTH+GAME_WIDTH)//2 + PADDING + LEFTBAR_WIDTH, 4*PADDING+APPNAME_SIZE))
     screen.blit(controls_surface, controls_rect)
     # scoring
-    scoring_rect = scoring_surface.get_rect(bottomright=(WINDOW_WIDTH-PADDING, +CONTROLS_HEIGHT+SCORING_HEIGHT+PADDING*2+APPNAME_SIZE))
+    scoring_rect = scoring_surface.get_rect(bottomright=((WINDOW_WIDTH+GAME_WIDTH)//2 + PADDING + LEFTBAR_WIDTH, +CONTROLS_HEIGHT+SCORING_HEIGHT+PADDING*5+APPNAME_SIZE))
     screen.blit(scoring_surface, scoring_rect)
 
     pygame.display.update()
