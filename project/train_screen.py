@@ -2,6 +2,7 @@
 from settings import *
 from game import Playfield, GameInfo
 from agent import Agent
+from gen_algo import RLGenAlgo
 
 pygame.init()
 screen = pygame.display.set_mode((GAME_WIDTH+RIGHTBAR_WIDTH+PADDING*3, GAME_HEIGHT+APPNAME_SIZE+PADDING*2))
@@ -11,8 +12,9 @@ clock = pygame.time.Clock()
 #objects
 info = GameInfo()
 field = Playfield(info)
-info.field = field
+info.field = field 
 agent = Agent(info)
+GA = RLGenAlgo(info, generations=20, population_size=12)
 
 colorMatrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
@@ -24,81 +26,112 @@ sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
 piece_per_second = 1
 move_time = 0
+cleared = 0
 
-### game loop
-running = True
-while running:
-    dt = clock.tick(FRAMEPERSEC)
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+##### GA GENERATION LOOP
+for g in range(GA.generations):
+    best_score, best_weights = GA.run_generation()
 
-    #game logic
-    field.update(dt, colorMatrix)
-    info.updateGameInfo(dt)
-    h, b, colHeights = agent.getGameState()  # game states
-    temp = " ".join(map(str, colHeights)) #no space and brackets
+    # reset for visual sim
+    info = GameInfo()
+    field = Playfield(info)
+    info.field = field
+    agent = Agent(info)
 
-    ######   agent actions HERE
-    if(move_time <= piece_per_second):
-        move_time += dt/1000
-    else:
-        move_time = 0   # reset move time
-        _, action = agent.chooseAction(field, depth=2) # depth = piece lookahead
-        field.moveTetromino(action[0], colorMatrix)
-        for dx in range(abs(action[1])):
-            if action[1] < 0:
-                field.moveTetromino(MOVE_LEFT, colorMatrix)
-            else:
-                field.moveTetromino(MOVE_RIGHT, colorMatrix)
-        field.moveTetromino(action[2], colorMatrix)
+    # set weights
+    agent.set_eval_function(lambda f: GA.evaluate_field(f, best_weights))
 
+    ### game loop
+    running = True
+    while running:
+        dt = clock.tick(FRAMEPERSEC)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                quit()
 
-    screen.fill(GRAY)
-    playfield_surface.fill(BLACK)
-    sidebar_surface.fill(BLACK)
+        field.update(dt, colorMatrix)
+        info.updateGameInfo(dt)
 
-    # playfield blocks
-    for y, row in enumerate(colorMatrix):
-        for x, color in enumerate(row):
-            if color:
-                pygame.draw.rect(playfield_surface, color,
-                                 (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if field.game_over:
+            #new generations
+            break
 
-    # piece and preview only, no ghost piece
-    if field.currentPiece:
-        shape_current = field.currentPiece.getShapeArray()
-        shape_next = field.nextPiece.getShapeArray()
-        preview_cell = CELL_SIZE // 1.5  # smaller display
+        h, b, colHeights = agent.getGameState()  # game states
+        temp = " ".join(map(str, colHeights)) #no space and brackets
 
-        for dx, dy in shape_current:
-            px, py = (field.currentPiece.coord[0] + dx) * CELL_SIZE, (field.currentPiece.coord[1] + dy) * CELL_SIZE
-            pygame.draw.rect(playfield_surface, field.currentPiece.color, (px, py, CELL_SIZE, CELL_SIZE))
+        ######   agent actions HERE
+        if(move_time <= piece_per_second):
+            move_time += dt/1000
+        else:
+            move_time = 0   # reset move time
+            _, action = agent.chooseAction(field, depth=2) # recursion = piece lookahead
+            field.moveTetromino(action[0], colorMatrix)
+            for dx in range(abs(action[1])):
+                if action[1] < 0:
+                    field.moveTetromino(MOVE_LEFT, colorMatrix)
+                else:
+                    field.moveTetromino(MOVE_RIGHT, colorMatrix)
+            field.moveTetromino(action[2], colorMatrix)
 
-        for px, py in shape_next:
-            # Draw the next piece preview
-            pygame.draw.rect(sidebar_surface, field.nextPiece.color, 
-            (PADDING+30+px * preview_cell, PADDING+70+py * preview_cell, preview_cell, preview_cell))
+        screen.fill(GRAY)
+        playfield_surface.fill(BLACK)
+        sidebar_surface.fill(BLACK)
 
+        # playfield blocks
+        for y, row in enumerate(colorMatrix):
+            for x, color in enumerate(row):
+                if color:
+                    pygame.draw.rect(playfield_surface, color,
+                                    (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
-    # sidebar
-    title_text = font_title.render("TETRIMIND", True, LINE_COLOR)
-    score_text = font_small.render(f"Score: {info.playerScore}", True, LINE_COLOR)
-    level_text = font_small.render(f"Level: {info.gameLevel}", True, LINE_COLOR)
-    preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
-    states_text = [f"Holes: {h}", f"Bumpiness: {b}", "Heights:", f"{temp}"]
-    for x, text in enumerate(states_text):
-        state_text = font_small.render(text, True, LINE_COLOR)
-        sidebar_surface.blit(state_text, (PADDING, PADDING+150+(x*20)))
+        # piece and preview only, no ghost piece
+        if field.currentPiece:
+            shape_current = field.currentPiece.getShapeArray()
+            shape_next = field.nextPiece.getShapeArray()
+            preview_cell = CELL_SIZE // 1.5  # smaller display
 
-    sidebar_surface.blit(score_text, (PADDING, PADDING))
-    sidebar_surface.blit(level_text, (PADDING, PADDING+16))
-    sidebar_surface.blit(preview_text, (PADDING, PADDING+16+16))
-    screen.blit(playfield_surface, (PADDING, PADDING + APPNAME_SIZE))
-    screen.blit(sidebar_surface, (GAME_WIDTH + PADDING * 2, PADDING + APPNAME_SIZE))
-    screen.blit(title_text, (PADDING, PADDING))
+            for dx, dy in shape_current:
+                px, py = (field.currentPiece.coord[0] + dx) * CELL_SIZE, (field.currentPiece.coord[1] + dy) * CELL_SIZE
+                pygame.draw.rect(playfield_surface, field.currentPiece.color, (px, py, CELL_SIZE, CELL_SIZE))
 
-    pygame.display.update()
+            for px, py in shape_next:
+                # Draw the next piece preview
+                pygame.draw.rect(sidebar_surface, field.nextPiece.color, 
+                (PADDING+30+px * preview_cell, PADDING+70+py * preview_cell, preview_cell, preview_cell))
 
-pygame.quit()
+        # sidebar
+        title_text = font_title.render("TETRIMIND", True, LINE_COLOR)
+        score_text = font_small.render(f"Score: {info.playerScore}", True, LINE_COLOR)
+        level_text = font_small.render(f"Level: {info.gameLevel}", True, LINE_COLOR)
+        preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
+        states_text = [f"Holes: {h}", f"Bumpiness: {b}", "Heights:", f"{temp}"]
+        for x, text in enumerate(states_text):
+            state_text = font_small.render(text, True, LINE_COLOR)
+            sidebar_surface.blit(state_text, (PADDING, PADDING+150+(x*20)))
+
+        ga_y = PADDING + 150 + len(states_text) * 20 + 20  # position below states_text
+        gen_text = font_small.render(f"GENERATION: {g}", True, LINE_COLOR)
+        sidebar_surface.blit(gen_text, (PADDING, ga_y))
+        ga_y += 20
+
+        bestscore_text = font_small.render(f"BEST SCORE: %.2f" %(best_score), True, LINE_COLOR)
+        sidebar_surface.blit(bestscore_text, (PADDING, ga_y))
+        ga_y += 20
+
+        cleared_text = font_small.render(f"LINES CLEARED: {field.lines_cleared_so_far}", True, LINE_COLOR)
+        sidebar_surface.blit(cleared_text, (PADDING, ga_y))
+        ga_y += 20
+        
+        sidebar_surface.blit(score_text, (PADDING, PADDING))
+        sidebar_surface.blit(level_text, (PADDING, PADDING+16))
+        sidebar_surface.blit(preview_text, (PADDING, PADDING+16+16))
+        screen.blit(playfield_surface, (PADDING, PADDING + APPNAME_SIZE))
+        screen.blit(sidebar_surface, (GAME_WIDTH + PADDING * 2, PADDING + APPNAME_SIZE))
+        screen.blit(title_text, (PADDING, PADDING))
+
+        pygame.display.update()
+
+    pygame.quit()

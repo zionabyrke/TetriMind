@@ -178,3 +178,7 @@ class Agent:
 
         return _field
 
+    def set_eval_function(self, func):
+        ### Assign a new evaluation function used by chooseAction()
+        self._evaluate_state = func
+

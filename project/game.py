@@ -132,6 +132,8 @@ class Playfield:
         self.nextPiece = Tetromino(self.bag.pop())
         self.last_action = 0
         self.lines_cleared = 0
+        self.lines_cleared_so_far = 0
+        self.game_over = False
 
     def generateTetromino(self):
         if not self.bag:
@@ -141,8 +143,7 @@ class Playfield:
         self.nextPiece = Tetromino(self.bag.pop())
         # Check game over
         if self._check_collision(self.currentPiece.coord[0], self.currentPiece.coord[1], self.currentPiece.getShapeArray()):
-            print("GAME OVER")
-            exit()
+            self.game_over = True
 
     def moveTetromino(self, action, colorMatrix):
         piece = self.currentPiece
@@ -186,6 +187,7 @@ class Playfield:
             if self._check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self._place_block(_coords, colorMatrix)
                 self.lines_cleared = self._check_line_clears(colorMatrix)
+                self.lines_cleared_so_far += self.lines_cleared
                 self.info._updateScore(self.lines_cleared, 
                                        ((self.last_action == ROTATE_LEFT or self.last_action ==  ROTATE_RIGHT) 
                                         and self.currentPiece.shapeType) == "T")
