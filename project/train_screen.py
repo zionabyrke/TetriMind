@@ -39,14 +39,14 @@ for g in range(GA.generations):
     best_score, best_weights = GA.run_generation()
     best_final = GA.get_best_final()
 
-    # reset for visual sim
-    visual_info = GameInfo()
-    visual_env = Playfield(visual_info)
-    visual_info.field = visual_env
-    visual_agent = Agent(visual_info)
+    # reset components for each generation
+    info = GameInfo()
+    field = Playfield(info)
+    info.field = field
+    agent = Agent(info)
 
     # set weights
-    visual_agent.set_eval_function(lambda f: GA.evaluate_field(f, model_weights))
+    agent.set_eval_function(lambda f: GA.evaluate_field(f, model_weights))
 
     ### game loop
     running = True
@@ -62,34 +62,33 @@ for g in range(GA.generations):
                 pygame.quit()
                 quit()
 
-        visual_env.update(dt, colorMatrix)
-        visual_info.updateGameInfo(dt)
+        field.update(dt, colorMatrix)
+        info.updateGameInfo(dt)
 
-        if visual_env.game_over:
+        if field.game_over:
             #new generations
             break
 
         # stop when piece limit is reached
-        if pieces >= 50:
+        if pieces >= 40: # should same on RLGenAlgo.evaluate_fitness()'s max_piece=40
             break
 
-        h, b, colHeights = visual_agent.getGameState()  # game states
+        h, b, colHeights = agent.getGameState()  # game states
         temp = " ".join(map(str, colHeights)) #no space and brackets
 
-        ######   visual_agent actions HERE
+        ######   agent actions HERE
         if(move_time <= piece_per_second):
             move_time += dt/1000
         else:
             move_time = 0   # reset move time
-            _, action = visual_agent.chooseAction(visual_env, depth=2) # recursion = piece lookahead
-            visual_env.moveTetromino(action[0], colorMatrix)
+            _, action = agent.chooseAction(field, depth=2) # recursion = piece lookahead
+            field.moveTetromino(action[0], colorMatrix)
             for dx in range(abs(action[1])):
                 if action[1] < 0:
-                    visual_env.moveTetromino(MOVE_LEFT, colorMatrix)
+                    field.moveTetromino(MOVE_LEFT, colorMatrix)
                 else:
-                    visual_env.moveTetromino(MOVE_RIGHT, colorMatrix)
-            visual_env.moveTetromino(action[2], colorMatrix)
-
+                    field.moveTetromino(MOVE_RIGHT, colorMatrix)
+            field.moveTetromino(action[2], colorMatrix)
             pieces += 1  
 
         screen.fill(GRAY)
@@ -104,24 +103,24 @@ for g in range(GA.generations):
                                     (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         # piece and preview only, no ghost piece
-        if visual_env.currentPiece:
-            shape_current = visual_env.currentPiece.getShapeArray()
-            shape_next = visual_env.nextPiece.getShapeArray()
+        if field.currentPiece:
+            shape_current = field.currentPiece.getShapeArray()
+            shape_next = field.nextPiece.getShapeArray()
             preview_cell = CELL_SIZE // 1.5  # smaller display
 
             for dx, dy in shape_current:
-                px, py = (visual_env.currentPiece.coord[0] + dx) * CELL_SIZE, (visual_env.currentPiece.coord[1] + dy) * CELL_SIZE
-                pygame.draw.rect(playfield_surface, visual_env.currentPiece.color, (px, py, CELL_SIZE, CELL_SIZE))
+                px, py = (field.currentPiece.coord[0] + dx) * CELL_SIZE, (field.currentPiece.coord[1] + dy) * CELL_SIZE
+                pygame.draw.rect(playfield_surface, field.currentPiece.color, (px, py, CELL_SIZE, CELL_SIZE))
 
             for px, py in shape_next:
                 # Draw the next piece preview
-                pygame.draw.rect(sidebar_surface, visual_env.nextPiece.color, 
+                pygame.draw.rect(sidebar_surface, field.nextPiece.color, 
                 (PADDING+30+px * preview_cell, PADDING+70+py * preview_cell, preview_cell, preview_cell))
 
         # sidebar
         title_text = font_title.render("TETRIMIND", True, LINE_COLOR)
-        score_text = font_small.render(f"Score: {visual_info.playerScore}", True, LINE_COLOR)
-        level_text = font_small.render(f"Level: {visual_info.gameLevel}", True, LINE_COLOR)
+        score_text = font_small.render(f"Score: {info.playerScore}", True, LINE_COLOR)
+        level_text = font_small.render(f"Level: {info.gameLevel}", True, LINE_COLOR)
         preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
         states_text = [f"Holes: {h}", f"Bumpiness: {b}", "Heights:", f"{temp}"]
         for x, text in enumerate(states_text):
@@ -133,7 +132,7 @@ for g in range(GA.generations):
         sidebar_surface.blit(gen_text, (PADDING, ga_y))
         ga_y += 20
 
-        cleared_text = font_small.render(f"LINES CLEARED: {visual_env.lines_cleared_so_far}", True, LINE_COLOR)
+        cleared_text = font_small.render(f"LINES CLEARED: {field.lines_cleared_so_far}", True, LINE_COLOR)
         sidebar_surface.blit(cleared_text, (PADDING, ga_y))
         ga_y += 20
         

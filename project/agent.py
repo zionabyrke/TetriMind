@@ -10,6 +10,7 @@ class Agent:
         self.piecePerSec = 1.0/self.field.fallSpeed
     
     def getGameState(self):
+        # UNSUSED BY GENETIC ALGO
         self.currentState = GameState(self.info)
         self.possibleStates = [self.currentState]
 
@@ -24,7 +25,6 @@ class Agent:
         # base case for recursion:
         if depth <= 0:
             return self._evaluate_state(field), None
-        
 
         # try every rotation actions
         for rot in [ROTATE_LEFT, ROTATE_RIGHT, None]:
@@ -47,7 +47,7 @@ class Agent:
                 next_field.currentPiece.coord = next_field.nextPiece.coord[:]
                 next_field.currentPiece.rotation = next_field.nextPiece.rotation
 
-                # randomize next-next piece (your game already does this)
+                # shuffle next-next piece (NEED ATTENTION since repetitive)
                 next_field.bag = list(ShapeList.keys())
                 random.shuffle(next_field.bag)
 
@@ -64,11 +64,10 @@ class Agent:
         return best_value, best_action
 
     ### Agent helpers (Private methods)
+    # this method will be replaced by genetic algo for applying weights
     def _evaluate_state(self, field):
         holes, bumpiness, heights = field.getFieldFeatures()
-        # --- PERFECT CLEAR BONUS ---
         perfect_clear_bonus = 1000 if all(sum(row) == 0 for row in field.blockMatrix) else 0
-        # rewards
         reward = (
             # rewards
             + LINE_SCORES.get(field.lines_cleared, 0)
@@ -80,7 +79,6 @@ class Agent:
             -1.50   * bumpiness       # smoother surface = better
             -0.25   * max(heights) # avoid tall columns
         )
-
         return reward
 
     def _copy_env(self, field):
@@ -179,6 +177,6 @@ class Agent:
         return _field
 
     def set_eval_function(self, func):
-        ### Assign a new evaluation function used by chooseAction()
+        ### rewrite the _evaluate_state() 
+        # for RLGenAlgo-related use only
         self._evaluate_state = func
-
