@@ -2,6 +2,7 @@ from settings import *
 import random
 import datetime
 
+random.seed(1)
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
 BLOCKFALL_RATE = 36 # Blocks fall every 36 frames

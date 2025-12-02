@@ -20,18 +20,28 @@ class Agent:
     def chooseAction(self, field):
         best_action = None
         best_value = -999999 # lowest by default
-        piece = field.currentPiece
+        field_copy = self._copy_field(field)
+        piece = field_copy.currentPiece
+
+        if piece.shapeType == "O":
+            rotations = 1
+        elif piece.shapeType == "I" or piece.shapeType == "S" or piece.shapeType == "Z":
+            rotations = 2
+        else:
+            rotations = 4
 
         # try every rotation actions
-        for rot in [ROTATE_LEFT, ROTATE_RIGHT, None]:
-            simulate_1 = self._simulate_rotation(field, rot)
+        for rot in range(rotations):
+            piece.rotate(1)
+            leftmost_x = min(piece.getShapeArray(), key = lambda coords:coords[0])[0]
+            rightmost_x = max(piece.getShapeArray(), key = lambda coords:coords[0])[0]
 
             # try from middle spawn to left & rightmost field
-            for dx in range(0-(COLUMNS//2), COLUMNS//2): 
-                simulate_2 = self._simulate_shift(simulate_1, dx)
+            for dx in range(0-leftmost_x, COLUMNS-rightmost_x): 
+                piece.coord[0] = dx
 
                 # hard drop to final landing position + line clears
-                simu_final = self._simulate_hard_drop(simulate_2)
+                simu_final = self._simulate_hard_drop(field_copy)
 
                 # evaluate reward for the action
                 value = self._evaluate_state(simu_final)
@@ -39,7 +49,7 @@ class Agent:
                 # looking for max value (min penalty) out of each state
                 if value > best_value:
                     best_value = value #ie:(-1, -1, HARD_DROP) left-> rotLeft-> drop
-                    best_action = (rot, dx, HARD_DROP)
+                    best_action = (piece.rotation, dx, HARD_DROP)
 
         # return converted to action
         return best_action

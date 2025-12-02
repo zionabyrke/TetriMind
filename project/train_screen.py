@@ -22,7 +22,7 @@ font_small = pygame.font.SysFont("consolas", 14)
 playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
-piece_per_second = 1
+piece_per_second = 0.5
 move_time = 0
 
 ### game loop
@@ -46,13 +46,21 @@ while running:
     else:
         move_time = 0   # reset move time
         action = agent.chooseAction(field)
-        field.moveTetromino(action[0], colorMatrix)
-        for dx in range(abs(action[1])):
-            if action[1] < 0:
+        #disgusting temporary code
+        # change rotation to best evaluated rot in chooseAction
+        for rot in range(0 + action[0]):
+            field.moveTetromino(ROTATE_RIGHT, colorMatrix)
+        # change x position to best evaluated x in chooseAction
+        dx = field.currentPiece.coord[0] - action[1]
+        for x in range(abs(dx)):
+            if(dx < 0):
                 field.moveTetromino(MOVE_LEFT, colorMatrix)
             else:
                 field.moveTetromino(MOVE_RIGHT, colorMatrix)
+        field.currentPiece.coord[0] = action[1]
+        # hard drop
         field.moveTetromino(action[2], colorMatrix)
+
 
 
     screen.fill(GRAY)
