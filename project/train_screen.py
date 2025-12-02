@@ -46,13 +46,21 @@ while running:
     else:
         move_time = 0   # reset move time
         action = agent.chooseAction(field)
-        field.moveTetromino(action[0], colorMatrix)
-        for dx in range(abs(action[1])):
-            if action[1] < 0:
+        #disgusting temporary code
+        # change rotation to best evaluated rot in chooseAction
+        for rot in range(0 + action[0]):
+            field.moveTetromino(ROTATE_RIGHT, colorMatrix)
+        # change x position to best evaluated x in chooseAction
+        dx = field.currentPiece.coord[0] - action[1]
+        for x in range(abs(dx)):
+            if(dx < 0):
                 field.moveTetromino(MOVE_LEFT, colorMatrix)
             else:
                 field.moveTetromino(MOVE_RIGHT, colorMatrix)
+        field.currentPiece.coord[0] = action[1]
+        # hard drop
         field.moveTetromino(action[2], colorMatrix)
+
 
 
     screen.fill(GRAY)
