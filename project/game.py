@@ -2,7 +2,10 @@ from settings import *
 import random
 import datetime
 
-random.seed(1)
+#seed that starts with Z->T
+#random.seed(1)
+random.seed(5)
+
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
 BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
@@ -184,11 +187,10 @@ class Playfield:
 
             # Check if we will place block by checking collisions from coords (x,y+1)
             if self._check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
-                self._place_block(_coords, colorMatrix)
+                self._place_block(_coords, self.currentPiece.getShapeArray(), colorMatrix)
+                tspin = self.is_tspin()
                 lines_cleared = self._check_line_clears(colorMatrix)
-                self.info._updateScore(lines_cleared, 
-                                       ((self.last_action == ROTATE_LEFT or self.last_action ==  ROTATE_RIGHT) 
-                                        and self.currentPiece.shapeType) == "T")
+                self.info._updateScore(lines_cleared, tspin)
                 self.generateTetromino()
             else:
                 self.moveTetromino(MOVE_DOWN, colorMatrix)
@@ -236,6 +238,20 @@ class Playfield:
 
         return _holes, _bumpiness, _columnHeights
 
+    def is_tspin(self):
+        if not(self.last_action == ROTATE_RIGHT or self.last_action == ROTATE_LEFT) or self.currentPiece.shapeType != "T":
+            return False
+        x, y = self.currentPiece.coord[0], self.currentPiece.coord[1]
+        shape = self.currentPiece.getShapeArray()
+        #check piece mobility to the left, right and up
+        #if it can move there then it's not a t-spin
+        if not (self._check_collision(x+1, y, shape) and 
+            self._check_collision(x-1, y, shape) and 
+            self._check_collision(x, y-1, shape)):
+            return False
+        print("reached here")
+
+        return True
 
     #### PRIVATE PLAYFIELD HELPER METHODS ####
     # Returns true if a boundary or block collision was dected, false otherwise
@@ -274,13 +290,14 @@ class Playfield:
                 return
 
     # places the blocks of current tetromino on block matrix and the color matrix
-    def _place_block(self, coords, colorMatrix):
+    def _place_block(self, coords, shape, colorMatrix=None):
         for x, y in self.currentPiece.getShapeArray():
             self.blockMatrix[coords[1] + y][coords[0] + x] = 1
-            colorMatrix[coords[1] + y][coords[0] + x] = self.currentPiece.color
+            if colorMatrix:
+                colorMatrix[coords[1] + y][coords[0] + x] = self.currentPiece.color
 
     # Called every time board gets updated
-    def _check_line_clears(self, colorMatrix):
+    def _check_line_clears(self, colorMatrix=None):
         # Check for any completed line from the y pos of current piece up to y+4
         line_clears = 0
         for y in range(self.currentPiece.coord[1], self.currentPiece.coord[1]+4):
@@ -288,9 +305,10 @@ class Playfield:
                 break
             if all(self.blockMatrix[y]):
                 self.blockMatrix.pop(y)
-                colorMatrix.pop(y)
                 self.blockMatrix.insert(0, [0 for _ in range(COLUMNS)])
-                colorMatrix.insert(0, [BLACK for _ in range(COLUMNS)])
+                if colorMatrix:
+                    colorMatrix.pop(y)
+                    colorMatrix.insert(0, [BLACK for _ in range(COLUMNS)])
                 line_clears+=1
 
         return line_clears
@@ -300,9 +318,12 @@ class Playfield:
         x,y = self._depth_collide(x,y)
 
         #lock piece imeeediately
-        self._place_block((x,y), colorMatrix)
+        self._place_block((x,y), self.currentPiece.getShapeArray(), colorMatrix)
         self.currentPiece.coord = [x,y] #update
         self.fallTimer = self.fallSpeed*1000
+
+    def soft_drop(self):
+        self.currentPiece.coord[0], self.currentPiece.coord[1] = self._depth_collide(self.currentPiece.coord[0], self.currentPiece.coord[1])
 
     def _depth_collide(self, x, y):
         _shape_array=self.currentPiece.getShapeArray()

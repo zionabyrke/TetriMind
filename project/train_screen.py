@@ -14,15 +14,46 @@ field = Playfield(info)
 info.field = field
 agent = Agent(info)
 
+### TESTING ###
+# T spin check
+field.blockMatrix = [
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,1,1,1],
+        [1,1,1,1,1,0,0,0,1,1],
+        [1,1,1,1,1,1,0,1,1,1]
+        ]
+
 colorMatrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
 font_small = pygame.font.SysFont("consolas", 14)
+
+### testing color matrix ###
+for y in range(ROWS):
+    for x in range(COLUMNS):
+        if field.blockMatrix[y][x] == 1:
+            colorMatrix[y][x] = RED
 
 #surfaces
 playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
-piece_per_second = 0.5
+piece_per_second = 1
 move_time = 0
 
 ### game loop
@@ -46,20 +77,22 @@ while running:
     else:
         move_time = 0   # reset move time
         action = agent.chooseAction(field)
+        print("ACTION =", action)
         #disgusting temporary code
         # change rotation to best evaluated rot in chooseAction
         for rot in range(0 + action[0]):
             field.moveTetromino(ROTATE_RIGHT, colorMatrix)
         # change x position to best evaluated x in chooseAction
-        dx = field.currentPiece.coord[0] - action[1]
+        dx = action[1] - field.currentPiece.coord[0]
         for x in range(abs(dx)):
             if(dx < 0):
                 field.moveTetromino(MOVE_LEFT, colorMatrix)
             else:
                 field.moveTetromino(MOVE_RIGHT, colorMatrix)
-        field.currentPiece.coord[0] = action[1]
         # hard drop
+        field.soft_drop()
         field.moveTetromino(action[2], colorMatrix)
+        field.update(field.fallSpeed*1000 +1, colorMatrix)
 
 
 
