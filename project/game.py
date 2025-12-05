@@ -1,6 +1,7 @@
 from settings import *
 import random
 import datetime
+import copy
 
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
@@ -83,10 +84,14 @@ I_wall_kick_dict = {(0, 1): I_type_1, (1, 0): I_type_2, (1, 2): I_type_3, (2, 1)
 class Bag:
     # just give the players the same generated seed and it will give them
     # the same sequence of piece without fail (source: trust me bro)
-    def __init__(self, seed):
-        self.rng = random.Random()
+    def __init__(self, seed, rng=None):
         self.bag_arr = []
-        self.reset(seed)
+        # if rng parameter was given, then we use that one (this if statement is mainly because of self.copy
+        if rng:
+            self.rng=rng
+        else:
+            self.rng = random.Random()
+            self.reset(seed)
 
     def _replenish_bag(self):
         self.bag_arr = list(ShapeList.keys())
@@ -102,9 +107,9 @@ class Bag:
     def peek(self):
         return Tetromino(self.bag_arr[-1])
 
-    # Di naman ata kailangan ng copy bag na function, unless may kailangan pa la in the future
-    # pero ngayon alisin ko muna
-    # def copy(self):
+    def copy(self):
+        # we just copy the new rng variable to the new one
+        return Bag(0, copy.deepcopy(self.rng))
     
     # clears the current bag, replenishes it, and reseeds the random number generator
     # also called at class instantiation to remove redundancy
@@ -262,10 +267,8 @@ class Game:
             # Check if we will place block by checking collisions from coords (x,y+1)
             if self._check_collision(_coords[0], _coords[1]+1, self.current_piece.get_shape_array()):
                 self.place_block(_coords, self.current_piece.get_shape_array(), color_matrix)
-                tspin = self.is_tspin()
                 lines_cleared = self.check_line_clears(color_matrix)
                 self.lines_cleared_so_far += lines_cleared
-                self.update_score(lines_cleared, tspin)
                 self.generate_tetromino()
             else:
                 self.move_tetromino(MOVE_DOWN, color_matrix)
@@ -371,9 +374,11 @@ class Game:
                 color_matrix[coords[1] + y][coords[0] + x] = self.current_piece.color
 
     # Called every time board gets updated
+    # also immediately updates score
     def check_line_clears(self, color_matrix=None):
         # Check for any completed line from the y pos of current piece up to y+4
         line_clears = 0
+        tspin = self.is_tspin()
         for y in range(self.current_piece.coord[1], self.current_piece.coord[1]+4):
             if y >= ROWS:
                 break
@@ -385,6 +390,9 @@ class Game:
                     color_matrix.insert(0, [BLACK for _ in range(COLUMNS)])
                 line_clears+=1
         
+        # if we gets some line clears then we immediately update score
+        if line_clears:
+            self.update_score(line_clears, tspin)
         return line_clears
 
     def _hard_drop(self, color_matrix):
@@ -416,8 +424,7 @@ class Game:
 
     # extracts the game state from Game
     def copy(self):
-        # gamegame laso needs to be copied omg
-        _game = Game(self.bag)
+        _game = Game(self.bag.copy())
         _game.player_score = self.player_score
 
         # duplicate current_piece as cp

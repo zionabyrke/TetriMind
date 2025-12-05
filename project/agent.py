@@ -47,20 +47,19 @@ class Agent:
 
                 # try t spin rotates
                 if piece.shape_type == "T":
-                    test = self.test_tspin(this_state)
-                    if test:
-                        test_piece = test.current_piece
-                        test.place_block(test_piece.coord, test_piece.get_shape_array())
+                    test_left = self.test_tspin(this_state, ROTATE_LEFT)
+                    if test_left:
+                        test_left.place_block(test_left.current_piece.coord, test_left.current_piece.get_shape_array())
+                        next_states[(piece.rotation, dx, ROTATE_LEFT)] = test_left
 
-                        next_states[(piece.rotation, dx, test.last_action)] = self._evaluate_state(test)
-                        ''' sanity checker, habang debug
-                        print("Lasst action =", test.last_action, " Rotate Right =", ROTATE_RIGHT, " Left =", ROTATE_LEFT)
-                        print((piece.rotation, dx, test.last_action), "Score =", next_states[(piece.rotation, dx, test.last_action)])
-                        '''
+                    test_right = self.test_tspin(this_state, ROTATE_RIGHT)
+                    if test_right:
+                        test_right.place_block(test_right.current_piece.coord, test_right.current_piece.get_shape_array())
+                        next_states[(piece.rotation, dx, ROTATE_RIGHT)] = test_right
 
                 #hard dropped
                 this_state.place_block((piece.coord[0], piece.coord[1]), shape)
-                next_states[(piece.rotation, dx, 0)] = self._evaluate_state(this_state)
+                next_states[(piece.rotation, dx, 0)] = this_state
 
 
         return next_states
@@ -70,41 +69,31 @@ class Agent:
         best_action = None
         best_value = (-999999, -999999) # lowest by default
         next_states = self.get_next_states(game)
+
         # evaluate reward for the action
         for action in next_states:
             # looking for max value (min penalty) out of each state
-            if next_states[action] > best_value:
-                best_value = next_states[action] #ie:(-1, -1, place_block) left-> rotLeft-> drop
+            state_eval = self._evaluate_state(next_states[action])
+            if state_eval > best_value:
+                best_value = state_eval
                 best_action = action
 
         # return converted to action
-        """
-        print("BEST_VALUE", best_value)
-        print("BEST_ACTION", best_action)
-        """
         return best_action
 
 
-    def test_tspin(self, game):
-        test_left = game.copy()
-        test_left.move_tetromino(ROTATE_LEFT, None)
-        if test_left.is_tspin():
-            return test_left
-
-        test_right = game.copy()
-        test_right.move_tetromino(ROTATE_RIGHT, None)
-        if test_right.is_tspin():
-            return test_right
-
+    def test_tspin(self, game, direction):
+        test = game.copy()
+        test.move_tetromino(direction, None)
+        if test.is_tspin():
+            return test
         return None
 
 
     ### Agent helpers (Private methods)
     def _evaluate_state(self, eval_game):
         # rewards
-        tspin = eval_game.is_tspin()
         lines_cleared = eval_game.check_line_clears()
-        eval_game.update_score(lines_cleared, tspin)
 
         holes, bumpiness, heights = eval_game.get_field_features()
 
