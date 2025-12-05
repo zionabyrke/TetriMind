@@ -57,7 +57,7 @@ playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
 move_time = 0
-action_pointer=0
+action_sequence=0
 action=None
 
 ### game loop
@@ -81,12 +81,15 @@ while running:
         if(move_time <= agent.move_per_sec):
             move_time += dt/1000
         else:
+            # resets the move time
             move_time = 0
-            if action_pointer==0:
+            # first action sequence - rotates tetromino to initial rotation
+            if action_sequence==0:
                 for rot in range(0 + action[0]):
                     game.move_tetromino(ROTATE_RIGHT, color_matrix)
-                action_pointer += 1
-            elif action_pointer==1:
+                action_sequence += 1
+            # second action sequence - moves tetromino to drop x coordinate move by move, not instant
+            elif action_sequence==1:
                 dx = action[1] - game.current_piece.coord[0]
                 if dx < 0:
                     game.move_tetromino(MOVE_LEFT, color_matrix)
@@ -95,22 +98,22 @@ while running:
                     game.move_tetromino(MOVE_RIGHT, color_matrix)
                     dx += 1
                 if dx == 0:
-                    action_pointer += 1
-            elif action_pointer==2:
+                    action_sequence += 1
+            # third action sequence - soft drop the tetromino
+            elif action_sequence==2:
                 game.soft_drop()
-                action_pointer+=1
-            elif action_pointer==3:
+                action_sequence+=1
+            # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
+            elif action_sequence==3:
                 game.move_tetromino(action[2], color_matrix)
-                action_pointer+=1
-            elif action_pointer==4:
+                action_sequence+=1
+            # finally we let the game place the block, then we clear action tuple and reset sequence
+            elif action_sequence==4:
                 game.update(game.fall_speed*1000+1, color_matrix)
                 action=None
-                action_pointer=0
+                action_sequence=0
     else:
         action = agent.choose_action(game)
-
-
-
 
     screen.fill(GRAY)
     playfield_surface.fill(BLACK)

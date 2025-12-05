@@ -2,6 +2,7 @@ from settings import *
 from game import Game, Bag
 from menu import show_menu
 import time
+import random
 
 pygame.init()
 
@@ -20,7 +21,7 @@ pygame.display.set_caption("TetriMind")
 
 # components
 clock = pygame.time.Clock()
-bag = Bag()
+bag = Bag(random.randint(0, 2**63-1))
 game = Game(bag)
 
 color_matrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]

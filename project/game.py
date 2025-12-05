@@ -5,12 +5,7 @@ import copy
 
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
-#BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
-
-# CURRENTLY set to big number for testing agent first
-# also mas maayos siguro kung ang pag set ng fall rate nasa game() na din, o sa gui
-# para magkaiba yung fall rate ni player at agent (mas maganda tingnan kung hindi naga fall yung sa agent
-BLOCKFALL_RATE = 10000
+BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
 
 #shapeList disctionary
 ShapeList = {
@@ -105,6 +100,8 @@ class Bag:
 
     #grab future piece without pulling from bag
     def peek(self):
+        if not self.bag_arr:
+            self._replenish_bag()
         return Tetromino(self.bag_arr[-1])
 
     def copy(self):
@@ -443,8 +440,9 @@ class Game:
         
         return _game
 
-    def reset(self):
+    def reset(self, seed):
         self.__init__(self.bag)
+        self.bag.reset(seed)
 
 # to add:
 # save_game()
