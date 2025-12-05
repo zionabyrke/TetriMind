@@ -2,16 +2,15 @@ from settings import *
 import random
 import datetime
 
-#seed that starts with Z->T
-#random.seed(1)
-#random.seed(5)
-#random.seed(20)
-random.seed(30)
-BAG = []
-
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
-BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
+#BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
+
+# CURRENTLY set to big number for testing agent first
+# also mas maayos siguro kung ang pag set ng fall rate nasa game() na din, o sa gui
+# para magkaiba yung fall rate ni player at agent (mas maganda tingnan kung hindi naga fall yung sa agent
+BLOCKFALL_RATE = 10000
+
 #shapeList disctionary
 ShapeList = {
     "S": {"color": GREEN, "rotations": [
@@ -78,50 +77,41 @@ I_wall_kick_dict = {(0, 1): I_type_1, (1, 0): I_type_2, (1, 2): I_type_3, (2, 1)
     (2, 3): I_type_2, (3, 2): I_type_1, (3, 0): I_type_4, (0, 3): I_type_3}
 
 
-# usage: only 1 bag for both human and agent
-# maintains a 7Bag for fastest player
-# the slowest player can access the up-popped bag
-# since fastest player do not pop them
+# new usage: both human and agent gets their own bag
+# binago ko kasi yung last impementation masyado nakakalito basahin
+# at gumagamit ng global (na hindi constant) which is no-no
 class Bag:
-    # no pop() since it causes Multiplayer unsynch
-    # used pointer instead
-    def __init__(self, start_pointer=0):
-        self.pointer = start_pointer
+    # just give the players the same generated seed and it will give them
+    # the same sequence of piece without fail (source: trust me bro)
+    def __init__(self, seed):
+        self.rng = random.Random()
+        self.bag_arr = []
+        self.reset(seed)
 
-        # adjust 7 to 14 if Agent needs deeper search
-        self._add(self.pointer + 7)
+    def _replenish_bag(self):
+        self.bag_arr = list(ShapeList.keys())
+        self.rng.shuffle(self.bag_arr)
 
-    #Extend the global 7-bag until long enough
-    def _add(self, need_size):
-        global BAG
-        while len(BAG) < need_size:
-            bag = list(ShapeList.keys())
-            random.shuffle(bag) # shuffles before extend
-            BAG.extend(bag)
-
-    # grab a piece from global bag and advance player pointer
+    # grab a piece from own bag
     def pull(self):
-        global BAG
-        self._add(self.pointer + 1)
-        shape = BAG[self.pointer]
-        self.pointer += 1
+        if not self.bag_arr:
+            self._replenish_bag()
+        return Tetromino(self.bag_arr.pop())
 
-        return Tetromino(shape)
+    #grab future piece without pulling from bag
+    def peek(self):
+        return Tetromino(self.bag_arr[-1])
 
-    #grab future piece without advancing pointer
-    def peek(self, index=0):
-        pos = self.pointer + index
-        self._add(pos + 1)
-        return Tetromino(BAG[pos])
-
-    def copy(self):
-        return Bag(start_pointer=self.pointer)
-
-    def reset(self):
-        BAG.clear()
-        self.pointer = 0
-        # adjust 7 to 14 if Agent needs deeper search
-        self._add(7)
+    # Di naman ata kailangan ng copy bag na function, unless may kailangan pa la in the future
+    # pero ngayon alisin ko muna
+    # def copy(self):
+    
+    # clears the current bag, replenishes it, and reseeds the random number generator
+    # also called at class instantiation to remove redundancy
+    def reset(self, seed):
+        self.bag_arr.clear()
+        self.rng.seed(seed)
+        self._replenish_bag()
 
 
 class Gamestate:
@@ -334,7 +324,6 @@ class Game:
             self._check_collision(x-1, y, shape) and 
             self._check_collision(x, y-1, shape)):
             return False
-        print("reached here")
 
         return True
 
@@ -395,7 +384,7 @@ class Game:
                     color_matrix.pop(y)
                     color_matrix.insert(0, [BLACK for _ in range(COLUMNS)])
                 line_clears+=1
-
+        
         return line_clears
 
     def _hard_drop(self, color_matrix):

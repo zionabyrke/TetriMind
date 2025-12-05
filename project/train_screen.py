@@ -3,13 +3,15 @@ from settings import *
 from game import Game, Bag, Tetromino
 from agent import Agent
 
+testing_seed = 5
+
 pygame.init()
 screen = pygame.display.set_mode((GAME_WIDTH+RIGHTBAR_WIDTH+PADDING*3, GAME_HEIGHT+APPNAME_SIZE+PADDING*2))
 pygame.display.set_caption("Training Arc")
 clock = pygame.time.Clock()
 
 #objects
-bag = Bag()
+bag = Bag(testing_seed)
 game = Game(bag)
 agent = Agent(game)
 
@@ -55,6 +57,8 @@ playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
 move_time = 0
+action_pointer=0
+action=None
 
 ### game loop
 running = True
@@ -70,29 +74,41 @@ while running:
 
     h, b, col_heights = agent.get_game_states()  # game states
     temp = " ".join(map(str, col_heights)) #no space and brackets
-
+    
     ######   agent actions HERE
-    if(move_time <= agent.piece_per_sec):
-        move_time += dt/1000
+    if action:
+        # do action in order
+        if(move_time <= agent.move_per_sec):
+            move_time += dt/1000
+        else:
+            move_time = 0
+            if action_pointer==0:
+                for rot in range(0 + action[0]):
+                    game.move_tetromino(ROTATE_RIGHT, color_matrix)
+                action_pointer += 1
+            elif action_pointer==1:
+                dx = action[1] - game.current_piece.coord[0]
+                if dx < 0:
+                    game.move_tetromino(MOVE_LEFT, color_matrix)
+                    dx -= 1
+                elif dx > 0:
+                    game.move_tetromino(MOVE_RIGHT, color_matrix)
+                    dx += 1
+                if dx == 0:
+                    action_pointer += 1
+            elif action_pointer==2:
+                game.soft_drop()
+                action_pointer+=1
+            elif action_pointer==3:
+                game.move_tetromino(action[2], color_matrix)
+                action_pointer+=1
+            elif action_pointer==4:
+                game.update(game.fall_speed*1000+1, color_matrix)
+                action=None
+                action_pointer=0
     else:
-        move_time = 0   # reset move time
         action = agent.choose_action(game)
-        print("ACTION =", action)
-        #disgusting temporary code
-        # change rotation to best evaluated rot in choose_action
-        for rot in range(0 + action[0]):
-            game.move_tetromino(ROTATE_RIGHT, color_matrix)
-        # change x position to best evaluated x in choose_action
-        dx = action[1] - game.current_piece.coord[0]
-        for x in range(abs(dx)):
-            if(dx < 0):
-                game.move_tetromino(MOVE_LEFT, color_matrix)
-            else:
-                game.move_tetromino(MOVE_RIGHT, color_matrix)
-        # hard drop
-        game.soft_drop()
-        game.move_tetromino(action[2], color_matrix)
-        game.update(game.fall_speed*1000 +1, color_matrix)
+
 
 
 

@@ -6,7 +6,8 @@ class Agent:
         self.game = game
         self.current_state = None
         self.possible_states = []
-        self.piece_per_sec = 1.0 # lower = faster
+        # move per sec is based on 60 frame per sec
+        self.move_per_sec = 2/60 # lower = faster
 
     def get_game_states(self):
         self.current_state = Gamestate(self.game)
@@ -50,12 +51,12 @@ class Agent:
                     if test:
                         test_piece = test.current_piece
                         test.place_block(test_piece.coord, test_piece.get_shape_array())
+
                         next_states[(piece.rotation, dx, test.last_action)] = self._evaluate_state(test)
                         ''' sanity checker, habang debug
                         print("Lasst action =", test.last_action, " Rotate Right =", ROTATE_RIGHT, " Left =", ROTATE_LEFT)
                         print((piece.rotation, dx, test.last_action), "Score =", next_states[(piece.rotation, dx, test.last_action)])
                         '''
-                    test = None
 
                 #hard dropped
                 this_state.place_block((piece.coord[0], piece.coord[1]), shape)
