@@ -85,24 +85,6 @@ class GameInfo:
         else:
             self.playerScore += LINE_SCORES.get(lines_cleared, 0)
 
-<<<<<<< Updated upstream
-
-
-class GameState:
-    def __init__(self, info):
-        self.field = info.field
-        self.currentPiece = self.field.currentPiece
-        self.nextPiece = self.field.nextPiece
-        self.score = info.playerScore
-
-        _holes, _bumpiness, _columnHeights = self.field.getFieldFeatures()
-        self.holes = _holes
-        self.bumpiness = _bumpiness
-        self.columnHeights = _columnHeights
-
-
-=======
->>>>>>> Stashed changes
 class Tetromino:
     def __init__(self, shape):
         self.coord = [(COLUMNS//2)-2, 0]
@@ -123,21 +105,6 @@ class Tetromino:
         return ShapeList[self.shapeType]["rotations"][(self.rotation + direction) % 4]
 
 
-<<<<<<< Updated upstream
-class Playfield:
-    def __init__(self, info):
-        self.info = info
-        self.blockMatrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
-        self.fallSpeed = BLOCKFALL_RATE / FRAMEPERSEC
-        self.fallTimer = 0
-        self.bag = list(ShapeList.keys())
-        random.shuffle(self.bag)
-        self.currentPiece = Tetromino(self.bag.pop())
-        self.nextPiece = Tetromino(self.bag.pop())
-        self.last_action = 0
-        self.lines_cleared = 0
-        self.lines_cleared_so_far = 0
-=======
 class Game:
     def __init__(self, bag):
         self.bag = bag
@@ -159,7 +126,6 @@ class Game:
         self.tspins = 0
         self.tetris = 0
         self.last_action = None
->>>>>>> Stashed changes
         self.game_over = False
 
     def generateTetromino(self):
@@ -211,22 +177,11 @@ class Game:
             _coords = self.currentPiece.coord
 
             # Check if we will place block by checking collisions from coords (x,y+1)
-<<<<<<< Updated upstream
-            if self._check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
-                self._place_block(_coords, colorMatrix)
-                self.lines_cleared = self._check_line_clears(colorMatrix)
-                self.lines_cleared_so_far += self.lines_cleared
-                self.info._updateScore(self.lines_cleared, 
-                                       ((self.last_action == ROTATE_LEFT or self.last_action ==  ROTATE_RIGHT) 
-                                        and self.currentPiece.shapeType) == "T")
-                self.generateTetromino()
-=======
             if self._check_collision(_coords[0], _coords[1]+1, self.current_piece.get_shape_array()):
                 self.place_block(_coords, self.current_piece.get_shape_array(), color_matrix)
                 self.lines_cleared = self.check_line_clears(color_matrix)
                 self.lines_cleared_so_far += self.lines_cleared
                 self.generate_tetromino()
->>>>>>> Stashed changes
             else:
                 self.moveTetromino(MOVE_DOWN, colorMatrix)
         
@@ -275,8 +230,6 @@ class Game:
 
         return _holes, _bumpiness, _columnHeights
 
-<<<<<<< Updated upstream
-=======
     # for genetic algorithm use
     def genetics_grid_features(self):
         holes = 0
@@ -385,7 +338,6 @@ class Game:
             return False
 
         return True
->>>>>>> Stashed changes
 
     #### PRIVATE PLAYFIELD HELPER METHODS ####
     # Returns true if a boundary or block collision was dected, false otherwise
@@ -462,8 +414,6 @@ class Game:
             y+=1
 
         return x,y
-<<<<<<< Updated upstream
-=======
 
     def update_score(self, lines_cleared, is_tspin):
         if is_tspin:
@@ -503,4 +453,3 @@ class Game:
 # save_game()
 # load_game()
 # update the game level
->>>>>>> Stashed changes

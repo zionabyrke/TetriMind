@@ -1,24 +1,3 @@
-<<<<<<< Updated upstream
-from game import *
-from settings import *
-
-class Agent:
-    def __init__(self, info):
-        self.info = info
-        self.field = self.info.field #blockMatrix inside
-        self.currentState = None
-        self.possibleStates = []
-        self.piecePerSec = 1.0/self.field.fallSpeed
-    
-    def getGameState(self):
-        # UNSUSED BY GENETIC ALGO
-        self.currentState = GameState(self.info)
-        self.possibleStates = [self.currentState]
-
-        # test
-        state = self.currentState
-        return state.holes, state.bumpiness, state.columnHeights
-=======
 from game import Game
 from settings import *
 
@@ -30,7 +9,6 @@ class Agent:
 
     def get_game_states(self):
         return self.game.get_field_features()
->>>>>>> Stashed changes
 
     def chooseAction(self, field, depth=1):
         best_action = None
