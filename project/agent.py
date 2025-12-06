@@ -8,7 +8,7 @@ class Agent:
         self.move_per_sec = 2/60 # lower = faster
 
     def get_game_states(self):
-        return game.get_field_features()
+        return self.game.get_field_features()
 
     def get_next_states(self, game):
         game_copy = game.copy()
