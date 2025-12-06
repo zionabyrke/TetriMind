@@ -85,6 +85,7 @@ class GameInfo:
         else:
             self.playerScore += LINE_SCORES.get(lines_cleared, 0)
 
+<<<<<<< Updated upstream
 
 
 class GameState:
@@ -100,6 +101,8 @@ class GameState:
         self.columnHeights = _columnHeights
 
 
+=======
+>>>>>>> Stashed changes
 class Tetromino:
     def __init__(self, shape):
         self.coord = [(COLUMNS//2)-2, 0]
@@ -120,6 +123,7 @@ class Tetromino:
         return ShapeList[self.shapeType]["rotations"][(self.rotation + direction) % 4]
 
 
+<<<<<<< Updated upstream
 class Playfield:
     def __init__(self, info):
         self.info = info
@@ -133,6 +137,29 @@ class Playfield:
         self.last_action = 0
         self.lines_cleared = 0
         self.lines_cleared_so_far = 0
+=======
+class Game:
+    def __init__(self, bag):
+        self.bag = bag
+        self.block_matrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
+        self.current_piece = self.bag.pull()
+        self.next_piece = self.bag.pull()
+        self.fall_speed = BLOCKFALL_RATE / FRAMEPERSEC
+        self.fall_timer = 0
+
+        #game info
+        self.player_score = 0
+        self.game_level = 1
+        self.elapsed_time = 0
+
+        # flags & counters
+        self.lines_cleared = 0
+        self.lines_cleared_so_far = 0
+        self.landing_height = 0
+        self.tspins = 0
+        self.tetris = 0
+        self.last_action = None
+>>>>>>> Stashed changes
         self.game_over = False
 
     def generateTetromino(self):
@@ -184,6 +211,7 @@ class Playfield:
             _coords = self.currentPiece.coord
 
             # Check if we will place block by checking collisions from coords (x,y+1)
+<<<<<<< Updated upstream
             if self._check_collision(_coords[0], _coords[1]+1, self.currentPiece.getShapeArray()):
                 self._place_block(_coords, colorMatrix)
                 self.lines_cleared = self._check_line_clears(colorMatrix)
@@ -192,6 +220,13 @@ class Playfield:
                                        ((self.last_action == ROTATE_LEFT or self.last_action ==  ROTATE_RIGHT) 
                                         and self.currentPiece.shapeType) == "T")
                 self.generateTetromino()
+=======
+            if self._check_collision(_coords[0], _coords[1]+1, self.current_piece.get_shape_array()):
+                self.place_block(_coords, self.current_piece.get_shape_array(), color_matrix)
+                self.lines_cleared = self.check_line_clears(color_matrix)
+                self.lines_cleared_so_far += self.lines_cleared
+                self.generate_tetromino()
+>>>>>>> Stashed changes
             else:
                 self.moveTetromino(MOVE_DOWN, colorMatrix)
         
@@ -200,12 +235,14 @@ class Playfield:
         shape_array = self.currentPiece.getShapeArray()
         x,y = self._depth_collide(x,y)
 
-        # adjust y coord[1] as ghost piece
-        ghostPiece = [] #temp coord list
-        for dx, dy in shape_array:
-            ghostPiece.append((x+dx, y+dy))
+        self.landing_height = y
 
-        return ghostPiece #display on main
+        # adjust y coord[1] as ghost piece
+        ghost = [] #temp coord list
+        for dx, dy in shape_array:
+            ghost.append((x+dx, y+dy))
+
+        return ghost #display on main
     
     def getFieldFeatures(self): #called by agent {Public}
         _holes = 0
@@ -238,6 +275,117 @@ class Playfield:
 
         return _holes, _bumpiness, _columnHeights
 
+<<<<<<< Updated upstream
+=======
+    # for genetic algorithm use
+    def genetics_grid_features(self):
+        holes = 0
+        bumpiness = 0
+        cumulative_height = 0
+        weighted_height = 0
+        relative_height = 0
+        vertical_hole_clusters = 0
+        max_well_depth = 0
+        sum_wells = 0
+        weighted_filled_cells = 0
+        hole_depth = 0
+        row_hole = 0
+
+        column_heights = [0] * COLUMNS
+        holes_per_col = [0] * COLUMNS
+        row_has_hole = [0] * ROWS
+
+        for col in range(COLUMNS):
+            first_block_row = None
+            current_holes = 0
+            hole_depth_accum = 0
+
+            # cluster = 1 continuous vertical holes in a column
+            # True = found
+            cluster_active = False
+
+            for row in range(ROWS):
+                cell = self.block_matrix[row][col]
+                # if block found first time => record height
+                if cell == 1:
+                    weighted_filled_cells += (ROWS - row)
+
+                    if first_block_row is None:
+                        first_block_row = row
+
+                    # close cluster ONLY if hole-cluster is below stack base
+                    if cluster_active and row > first_block_row:
+                        vertical_hole_clusters += 1
+                        cluster_active = False
+
+                else: # only count holes BELOW first block
+                    if first_block_row is not None:
+                        current_holes += 1
+                        row_has_hole[row] = 1
+                        hole_depth_accum += (ROWS - first_block_row)
+
+                        if not cluster_active:
+                            cluster_active = True
+            # end of column, close cluster if open
+            if cluster_active:
+                vertical_hole_clusters += 1
+
+            # results
+            column_heights[col] = 0 if first_block_row is None else (ROWS - first_block_row)
+            holes_per_col[col] = current_holes
+            holes += current_holes
+            hole_depth += hole_depth_accum
+
+        # heights
+        max_h = max(column_heights)
+        min_h = min(column_heights)
+        relative_height = max_h - min_h
+        cumulative_height = sum(column_heights)
+        weighted_height = sum(h*h for h in column_heights)
+
+        # bumpiness
+        for c in range(COLUMNS - 1):
+            bumpiness += abs(column_heights[c] - column_heights[c+1])
+        # wells
+        for c in range(COLUMNS):
+            left = column_heights[c-1] if c > 0 else 99
+            right = column_heights[c+1] if c < COLUMNS - 1 else 99
+            w = max(0, min(left, right) - column_heights[c])
+            sum_wells += w
+            max_well_depth = max(max_well_depth, w)
+
+        row_hole = sum(row_has_hole)
+
+        return {
+            "holes": holes,
+            "bumpiness": bumpiness,
+            "lines_cleared": self.lines_cleared,
+            "weighted_height": weighted_height,
+            "cumulative_height": cumulative_height,
+            "relative_height": relative_height,
+            "vertical_hole_clusters": vertical_hole_clusters,
+            "max_well_depth": max_well_depth,
+            "sum_wells": sum_wells,
+            "weighted_filled_cells": weighted_filled_cells,
+            "landing_height": self.landing_height,
+            "hole_depth": hole_depth,
+            "row_hole": row_hole
+        }
+
+    def is_tspin(self):
+        if not(self.last_action == ROTATE_RIGHT or self.last_action == ROTATE_LEFT) or self.current_piece.shape_type != "T":
+            return False
+        x, y = self.current_piece.coord[0], self.current_piece.coord[1]
+        shape = self.current_piece.get_shape_array()
+        #check piece mobility to the left, right and up
+        #if it can move there then it's not a t-spin
+        if not (self._check_collision(x+1, y, shape) and 
+            self._check_collision(x-1, y, shape) and 
+            self._check_collision(x, y-1, shape)):
+            return False
+
+        return True
+>>>>>>> Stashed changes
 
     #### PRIVATE PLAYFIELD HELPER METHODS ####
     # Returns true if a boundary or block collision was dected, false otherwise
@@ -314,3 +462,45 @@ class Playfield:
             y+=1
 
         return x,y
+<<<<<<< Updated upstream
+=======
+
+    def update_score(self, lines_cleared, is_tspin):
+        if is_tspin:
+            self.tspins += 1
+            self.player_score += T_SPIN.get(lines_cleared, 0)
+        else:
+            if lines_cleared == 4:
+                self.tetris += 1
+            self.player_score += LINE_SCORES.get(lines_cleared, 0)
+
+    # extracts the game state from Game
+    def copy(self):
+        _game = Game(self.bag.copy())
+        _game.player_score = self.player_score
+
+        # duplicate current_piece as cp
+        cp = self.current_piece
+        _game.current_piece = cp.copy()
+        _game.current_piece.coord = cp.coord[:]
+        _game.current_piece.rotation = cp.rotation
+
+        # duplicate next_piece as np
+        np = self.next_piece
+        _game.next_piece = cp.copy()
+        _game.next_piece.coord = np.coord[:]
+        _game.next_piece.rotation = np.rotation
+
+        _game.block_matrix = [row[:] for row in self.block_matrix]
+        
+        return _game
+
+    def reset(self, seed):
+        self.__init__(self.bag)
+        self.bag.reset(seed)
+
+# to add:
+# save_game()
+# load_game()
+# update the game level
+>>>>>>> Stashed changes

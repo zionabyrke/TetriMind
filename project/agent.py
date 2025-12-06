@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 from game import *
 from settings import *
 
@@ -17,6 +18,19 @@ class Agent:
         # test
         state = self.currentState
         return state.holes, state.bumpiness, state.columnHeights
+=======
+from game import Game
+from settings import *
+
+class Agent:
+    def __init__(self, game):
+        self.game = game
+        # move per sec is based on 60 frame per sec
+        self.move_per_sec = 2/60 # lower = faster
+
+    def get_game_states(self):
+        return self.game.get_field_features()
+>>>>>>> Stashed changes
 
     def chooseAction(self, field, depth=1):
         best_action = None
