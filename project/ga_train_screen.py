@@ -125,6 +125,7 @@ while running:
         level_text = font_small.render(f"Level: {game.game_level}", True, LINE_COLOR)
         preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
         states_text = [f"Generation: {agent.generation}", 
+            f"Population size: {agent.population_size}",
             f"Genome: {agent.current_genome_index}",
             f"Game: {games}",
             f"Lines cleared: {game.lines_cleared_so_far}",
@@ -147,7 +148,7 @@ while running:
     #### GA acts here
     agent.tournament(reward)
 
-    ## matplotlib logs only after a generation is finised
+    ## matplotlib logs only after an interval of generation is finised
     if agent.current_genome_index == 0:
         agent.fitness_log() 
         """
@@ -156,6 +157,7 @@ while running:
         if agent.generation == 0:
         #if agent.generation == 1:
         """
-        if agent.generation == 1:
+        intervals = 5
+        if agent.generation % intervals == 0.0:
             agent.plot_fitness()
 pygame.quit()

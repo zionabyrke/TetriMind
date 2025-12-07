@@ -18,10 +18,6 @@ class GeneticAlgorithm(Agent):
             mutation_step=0.2
     ):
         super().__init__(game)
-        # reset, superclass Agent() can be used by others
-        self.move_time=0
-        self.action_sequence=0
-        self.action=None
 
         # ga hyperparameters
         self.population_size = population_size
