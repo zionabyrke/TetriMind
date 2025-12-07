@@ -60,6 +60,7 @@ sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 running = True
 while running:
     dt = clock.tick(FRAMEPERSEC)
+    game.update_clock(dt)
     if game.game_over:
         print("Game Over")
         exit()

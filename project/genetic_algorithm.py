@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 """
 
 class GeneticAlgorithm(Agent):
-    def __init__(self, game, reset=True, 
+    def __init__(self, game, reset=False, play=False,
             population_size=3, # test
             mutation_rate=0.05, 
             mutation_step=0.2
@@ -47,11 +47,13 @@ class GeneticAlgorithm(Agent):
 
         # reset = saved best genomes will be overwritten
         self.reset = reset
-        if reset or not self.load_best(): # unsuccessful
+        self.play = play
+        if self.play:
+            self.load_best()
+            print("Loaded")
+        elif self.reset or not self.load_best():
             self.init_population()
-        """else:
-            if not self.load_best(): # unsuccessful
-                self.init_population()"""
+            print("not loaded or reset=True")
 
 
     # overwritten method by inheritance:
@@ -101,23 +103,16 @@ class GeneticAlgorithm(Agent):
             genome["fitness"] = 0
             self.genomes.append(genome)
 
-    # for actual game
-    def eval_game(self):
-        features = self.game.genetics_grid_features()
-        genome = self.genomes[self.current_genome_index]
-        reward = 0
-        for k in self.genes:
-            # dot product of weights and features
-            reward += genome[k] * features[k]
-        return reward
-
     """
-    same as eval_game but accepts a simulated game so the agent
+    accepts a simulated game so the agent
     can evaluate hypothetical placements without altering real game
     """
     def value_actions(self, sim_game):
         features = sim_game.genetics_grid_features()
-        genome = self.genomes[self.current_genome_index]
+        if self.play:
+            genome = self.genomes[0]  # FIXED brain
+        else:
+            genome = self.genomes[self.current_genome_index]  # training brain
         reward = 0
         for k in self.genes:
             reward += genome[k] * features[k]
@@ -127,14 +122,17 @@ class GeneticAlgorithm(Agent):
     records a genome's fitness (episode score) for the current genome index
     when all genomes in the population are evaluated, calls evolve()
     """
-    def tournament(self, value):
-        self.genomes[self.current_genome_index]["fitness"] = value
-        self.current_genome_index += 1
-        if self.current_genome_index >= len(self.genomes):
-            self.evolve()
-            self.current_genome_index = 0
-
-        #self.save_best() # saving best genome happens
+    def tournament(self, reward):
+        if not self.play:
+            self.genomes[self.current_genome_index]["fitness"] = reward
+            self.current_genome_index += 1
+            if self.current_genome_index >= len(self.genomes):
+                self.evolve()
+                self.current_genome_index = 0
+            self.save_best() # saving best genome happens
+        else: # play independently using genome[0]
+            self.genomes[0]["fitness"] = reward
+            self.choose_action(self.game)
 
     """
     samples a parent from top players using:: 
@@ -188,7 +186,7 @@ class GeneticAlgorithm(Agent):
         new_population.append(best)
         #print("EVOLVE CALLED")
 
-        #self.fitness_log()
+        self.fitness_log()
 
         while len(new_population) < self.population_size:
             p1 = self.random_parent()

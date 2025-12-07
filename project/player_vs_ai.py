@@ -23,12 +23,13 @@ top_y = 4 * PADDING + APPNAME_SIZE
 
 #objects
 seed = random.randint(0, 2**63-1)
-bag = Bag(seed)
-game_p = Game(bag)
+bag_p = Bag(seed)
+game_p = Game(bag_p)
 
 # AI components
-game_ai = Game(bag)
-agent = GeneticAlgorithm(game_ai, reset=False)
+bag_ai = Bag(seed)
+game_ai = Game(bag_ai)
+agent = GeneticAlgorithm(game_ai, play=True)
 agent.move_per_sec = 10/60
 # reset = True overwrites the saved file 
 
@@ -76,9 +77,11 @@ while running:
         agent.move_time=0
         agent.action_sequence=0
         agent.action=None
+        print(agent.get_current_weights())
 
     dt = clock.tick(FRAMEPERSEC)
-    dt_s = dt / 1000.0 # convert to seconds
+    game_p.update_clock(dt)
+    game_ai.update_clock(dt)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

@@ -1,5 +1,5 @@
 {
-    "generation": 1,
+    "generation": 11,
     "weights": {
         "holes": 0.266805517835465,
         "bumpiness": -0.07183151068852689,
@@ -16,5 +16,5 @@
         "row_hole": 0.14304502782998474
     },
     "id": 9330793,
-    "fitness": 1640
+    "fitness": 563
 }

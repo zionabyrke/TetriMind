@@ -155,9 +155,7 @@ while running:
     agent.tournament(reward)
 
     ## matplotlib logs only after an interval of generation is finised
-    if agent.current_genome_index == 0:
-        agent.fitness_log() 
-        intervals = 5
-        if agent.generation % intervals == 0.0:
-            agent.plot_fitness()
+    intervals = 5
+    if agent.generation % intervals == 0.0:
+        agent.plot_fitness()
 pygame.quit()

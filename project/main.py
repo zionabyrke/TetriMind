@@ -60,6 +60,7 @@ while running:
         paused = True
 
     dt = clock.tick(FRAMEPERSEC)
+    game.update_clock(dt)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
