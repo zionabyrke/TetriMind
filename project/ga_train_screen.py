@@ -3,10 +3,11 @@ from settings import *
 from game import Game, Bag, Tetromino
 from agent import Agent
 from genetic_algorithm import GeneticAlgorithm
+import random
 
-testing_seed = 5
+seed = random.randint(1, 10)
 #objects
-bag = Bag(testing_seed)
+bag = Bag(seed)
 game = Game(bag)
 agent = GeneticAlgorithm(game, reset=False)
 # reset = True overwrites the saved file
@@ -64,7 +65,7 @@ running = True
 games = 0
 
 while running:
-    game.reset(testing_seed)
+    game.reset(seed)
     agent.game = game
     reward = 0
     games += 1
@@ -84,13 +85,14 @@ while running:
 
         #game logic
         game.update(dt, color_matrix)
-        # chen's linear reward
-        reward += 1 + game.lines_cleared
-
         ######   agent actions HERE
         # agent must be passed
         # Agent() superclass != GeneticAlgorithm() subclass
         agent.moves(game, agent, dt, color_matrix)
+
+        # chen's linear reward 
+        # (here because agent.moves has game update inside)
+        reward += 1 + game.lines_cleared
 
         screen.fill(GRAY)
         playfield_surface.fill(BLACK)
@@ -145,6 +147,10 @@ while running:
 
         pygame.display.update()
 
+    # randomize seed when all genomes finished
+    if agent.current_genome_index == agent.population_size - 1:
+        seed = random.randint(1, random.randint(1, 1000))
+        #print(seed)
 
     #### GA acts here
     agent.tournament(reward)
@@ -152,12 +158,6 @@ while running:
     ## matplotlib logs only after an interval of generation is finised
     if agent.current_genome_index == 0:
         agent.fitness_log() 
-        """
-        # problem: nag stop pygame while matplot is open
-        agent.population_size = 3 # test matplotlib
-        if agent.generation == 0:
-        #if agent.generation == 1:
-        """
         intervals = 5
         if agent.generation % intervals == 0.0:
             agent.plot_fitness()
