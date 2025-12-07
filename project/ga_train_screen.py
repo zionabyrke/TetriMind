@@ -150,6 +150,6 @@ while running:
         if agent.generation == 0:
         #if agent.generation == 1:
         """
-        if agent.generation % 10 == 0:
+        if agent.generation == 1:
             agent.plot_fitness()
 pygame.quit()
