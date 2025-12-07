@@ -74,6 +74,13 @@ while running:
 
     h, b, col_heights = agent.get_game_states()  # game states
     temp = " ".join(map(str, col_heights)) #no space and brackets
+
+    """
+        before:
+        forces soft drop (walang condition kung ma soft drop o dae)
+        miscalculates horizontal movement
+        tries to rotate after hard drops
+        """
     
     ######   agent actions HERE
     if action:
@@ -90,19 +97,28 @@ while running:
                 action_sequence += 1
             # second action sequence - moves tetromino to drop x coordinate move by move, not instant
             elif action_sequence==1:
-                dx = action[1] - game.current_piece.coord[0]
+                target_x = action[1]
+                current_x = game.current_piece.coord[0]
+                dx = target_x - current_x
                 if dx < 0:
                     game.move_tetromino(MOVE_LEFT, color_matrix)
-                    dx -= 1
+                    # ### FIX: do NOT modify dx manually, let game update coord
                 elif dx > 0:
                     game.move_tetromino(MOVE_RIGHT, color_matrix)
-                    dx += 1
-                if dx == 0:
+                    # ### FIX: same, do not modify dx here
+                # ### FIX: refresh coord to see if we reached target X
+                if game.current_piece.coord[0] == target_x:
                     action_sequence += 1
-            # third action sequence - soft drop the tetromino
+            # third action sequence - drop the tetromino
             elif action_sequence==2:
-                game.soft_drop()
-                action_sequence+=1
+                # ### FIX: safely read drop_type OR default to HARD_DROP
+                drop_type = action[3] if len(action) > 3 else HARD_DROP
+                if drop_type == HARD_DROP:
+                    game.move_tetromino(HARD_DROP, color_matrix)
+                    action_sequence = 4
+                else:
+                    game.soft_drop()
+                    action_sequence += 1
             # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
             elif action_sequence==3:
                 game.move_tetromino(action[2], color_matrix)
