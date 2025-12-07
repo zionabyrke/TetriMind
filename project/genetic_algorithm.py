@@ -13,11 +13,15 @@ import matplotlib.pyplot as plt
 
 class GeneticAlgorithm(Agent):
     def __init__(self, game, reset=True, 
-            population_size=6, # test
+            population_size=3, # test
             mutation_rate=0.05, 
             mutation_step=0.2
     ):
         super().__init__(game)
+        # reset, superclass Agent() can be used by others
+        self.move_time=0
+        self.action_sequence=0
+        self.action=None
 
         # ga hyperparameters
         self.population_size = population_size
@@ -47,10 +51,12 @@ class GeneticAlgorithm(Agent):
 
         # reset = saved best genomes will be overwritten
         self.reset = reset
-        if reset:
+        if reset or not self.load_best(): # unsuccessful
             self.init_population()
-        else:
-            self.load_best()
+        """else:
+            if not self.load_best(): # unsuccessful
+                self.init_population()"""
+
 
     # overwritten method by inheritance:
     def _evaluate_state(self, eval_game):
@@ -228,6 +234,8 @@ class GeneticAlgorithm(Agent):
             return False
         with open(path, "r") as f:
             data = json.load(f)
+        if len(self.genomes) == 0: # at least 1 genome
+            self.genomes.append({k: 0 for k in self.genes})
         for k in self.genes:
             self.genomes[0][k] = data["weights"][k]
         self.genomes[0]["id"] = data["id"]
@@ -242,23 +250,31 @@ class GeneticAlgorithm(Agent):
     """
 
     
-    def plot_fitness(self):
+    def plot_fitness(self, filename="fitness_plot.png"):
+        matplotlib.use("Agg")   # non-GUI
 
         if not self.fitness_history:
             print("no fitness history")
             return
+
         gens = [g for g, _, _ in self.fitness_history]
         best = [b for _, b, _ in self.fitness_history]
-        avg = [a for _, _, a in self.fitness_history]
-        plt.figure(figsize=(10, 5))
-        plt.plot(gens, best, label="best")
-        plt.plot(gens, avg, label="avg")
-        plt.legend()
-        plt.grid(True)
-        plt.title("GA Fitness Curve")
-        plt.xlabel("generation")
-        plt.ylabel("fitness")
-        plt.show()
-    
+        avg  = [a for _, _, a in self.fitness_history]
+
+        fig, ax = plt.subplots(figsize=(10, 5))  # create figure (required to save PNG)
+
+        ax.plot(gens, best, label="best")
+        ax.plot(gens, avg, label="avg")
+        ax.legend()
+        ax.grid(True)
+        ax.set_title("GA Fitness Curve")
+        ax.set_xlabel("generation")
+        ax.set_ylabel("fitness")
+
+        fig.savefig(filename, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+
+        print(f"fitness PNG saved to {filename}")
+
   
 

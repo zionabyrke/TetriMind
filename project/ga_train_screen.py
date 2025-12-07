@@ -8,7 +8,7 @@ testing_seed = 5
 #objects
 bag = Bag(testing_seed)
 game = Game(bag)
-agent = GeneticAlgorithm(game, reset=True)
+agent = GeneticAlgorithm(game, reset=False)
 # reset = True overwrites the saved file
 
 pygame.init()
@@ -59,19 +59,20 @@ font_small = pygame.font.SysFont("consolas", 14)
 playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
-games = 0
-
 ### game loop
 running = True
+games = 0
+
 while running:
     game.reset(testing_seed)
     agent.game = game
     reward = 0
     games += 1
     color_matrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
-    move_time = 0
-    action_sequence=0
-    action=None
+
+    agent.move_time=0
+    agent.action_sequence=0
+    agent.action=None
     
     #game logic
     while not game.game_over and running:
@@ -87,47 +88,9 @@ while running:
         reward += 1 + game.lines_cleared
 
         ######   agent actions HERE
-        if action:
-            # do action in order
-            if(move_time <= agent.move_per_sec):
-                move_time += dt/1000
-            else:
-                # resets the move time
-                move_time = 0
-                # first action sequence - rotates tetromino to initial rotation
-                if action_sequence==0:
-                    for rot in range(0 + action[0]):
-                        game.move_tetromino(ROTATE_RIGHT, color_matrix)
-                    action_sequence += 1
-                # second action sequence - moves tetromino to drop x coordinate move by move, not instant
-                elif action_sequence==1:
-                    target_x = action[1]
-                    current_x = game.current_piece.coord[0]
-                    dx = target_x - current_x
-                    if dx < 0:
-                        game.move_tetromino(MOVE_LEFT, color_matrix)
-                        # ### FIX: do NOT modify dx manually, let game update coord
-                    elif dx > 0:
-                        game.move_tetromino(MOVE_RIGHT, color_matrix)
-                        # ### FIX: same, do not modify dx here
-                    # ### FIX: refresh coord to see if we reached target X
-                    if game.current_piece.coord[0] == target_x:
-                        action_sequence += 1
-                # third action sequence - soft drop
-                elif action_sequence==2:
-                    game.soft_drop()
-                    action_sequence += 1
-                # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
-                elif action_sequence==3:
-                    game.move_tetromino(action[2], color_matrix)
-                    action_sequence+=1
-                # finally we let the game place the block, then we clear action tuple and reset sequence
-                elif action_sequence==4:
-                    game.update(game.fall_speed*1000+1, color_matrix)
-                    action=None
-                    action_sequence=0
-        else:
-            action = agent.choose_action(game)
+        # agent must be passed
+        # Agent() superclass != GeneticAlgorithm() subclass
+        agent.moves(game, agent, dt, color_matrix)
 
         screen.fill(GRAY)
         playfield_surface.fill(BLACK)
@@ -193,6 +156,6 @@ while running:
         if agent.generation == 0:
         #if agent.generation == 1:
         """
-        if agent.generation % 10 == 0:
+        if agent.generation == 1:
             agent.plot_fitness()
 pygame.quit()
