@@ -81,6 +81,7 @@ class Bag:
     # the same sequence of piece without fail (source: trust me bro)
     def __init__(self, seed, rng=None):
         self.bag_arr = []
+        self.seed=seed
         # if rng parameter was given, then we use that one (this if statement is mainly because of self.copy
         if rng:
             self.rng=rng
@@ -111,7 +112,6 @@ class Bag:
     # clears the current bag, replenishes it, and reseeds the random number generator
     # also called at class instantiation to remove redundancy
     def reset(self, seed):
-        self.bag_arr.clear()
         self.rng.seed(seed)
         self._replenish_bag()
 
@@ -147,8 +147,8 @@ class Game:
     def __init__(self, bag):
         self.bag = bag
         self.block_matrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
-        self.current_piece = self.bag.pull()
         self.next_piece = self.bag.pull()
+        self.generate_tetromino()
         self.fall_speed = BLOCKFALL_RATE / FRAMEPERSEC
         self.fall_timer = 0
 
@@ -176,7 +176,7 @@ class Game:
                                  self.current_piece.get_shape_array()):
             self.game_over = True
 
-    def move_tetromino(self, action, color_matrix):
+    def move_tetromino(self, action, color_matrix=None):
         piece = self.current_piece
         if not piece: #if no piece falling
             return
@@ -496,8 +496,9 @@ class Game:
         return _game
 
     def reset(self, seed):
-        self.__init__(self.bag)
+        # Dapat pala irereset yung bag before i call yung init, nabaliktad ko dati kaya di same yung nagpapakita kahit same seed
         self.bag.reset(seed)
+        self.__init__(self.bag)
 
 # to add:
 # save_game()

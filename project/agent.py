@@ -1,5 +1,4 @@
 from game import Game
-from game import Game, Gamestate
 from settings import *
 
 class Agent:
@@ -31,30 +30,37 @@ class Agent:
             rightmost_x = max(shape, key = lambda coords:coords[0])[0]
 
             # try from middle spawn to left & rightmost game
-            for dx in range(0-leftmost_x, COLUMNS-rightmost_x): 
+            for x in range(0-leftmost_x, COLUMNS-rightmost_x): 
                 # hard drop to final landing position + line clears
-                piece.coord[0], piece.coord[1] = game_copy.depth_collide(dx, 0)
+                dx = x - ((COLUMNS//2)-2)
 
                 # add action state pair
                 # actions are of the form (initial rotation, distance from spawn x coordinate, rotation at the bottom for t spin)
                 this_state = game_copy.copy()
+                for move in range(abs(dx)):
+                    if dx < 0:
+                        this_state.move_tetromino(MOVE_LEFT)
+                    else:
+                        this_state.move_tetromino(MOVE_RIGHT)
 
-                # try t spin rotates
-                if piece.shape_type == "T":
-                    test_left = self.test_tspin(this_state, ROTATE_LEFT)
-                    if test_left:
-                        test_left.place_block(test_left.current_piece.coord, test_left.current_piece.get_shape_array())
-                        next_states[(piece.rotation, dx, ROTATE_LEFT)] = test_left
+                # CHECK if current x coordinate is reachable via moves rights or lefts
+                if this_state.current_piece.coord[0] == x:
+                    this_state.soft_drop()
+                    # try t spin rotates
+                    if piece.shape_type == "T":
+                        test_left = self.test_tspin(this_state, ROTATE_LEFT)
+                        if test_left:
+                            test_left.place_block(test_left.current_piece.coord, test_left.current_piece.get_shape_array())
+                            next_states[(piece.rotation, x, ROTATE_LEFT)] = test_left
 
-                    test_right = self.test_tspin(this_state, ROTATE_RIGHT)
-                    if test_right:
-                        test_right.place_block(test_right.current_piece.coord, test_right.current_piece.get_shape_array())
-                        next_states[(piece.rotation, dx, ROTATE_RIGHT)] = test_right
+                        test_right = self.test_tspin(this_state, ROTATE_RIGHT)
+                        if test_right:
+                            test_right.place_block(test_right.current_piece.coord, test_right.current_piece.get_shape_array())
+                            next_states[(piece.rotation, x, ROTATE_RIGHT)] = test_right
 
-                #hard dropped
-                this_state.place_block((piece.coord[0], piece.coord[1]), shape)
-                next_states[(piece.rotation, dx, 0)] = this_state
-
+                    #hard dropped
+                    this_state.place_block(this_state.current_piece.coord, shape)
+                    next_states[(piece.rotation, x, 0)] = this_state
 
         return next_states
 

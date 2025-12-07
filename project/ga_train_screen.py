@@ -59,9 +59,6 @@ font_small = pygame.font.SysFont("consolas", 14)
 playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
-move_time = 0
-action_sequence=0
-action=None
 games = 0
 
 ### game loop
@@ -72,6 +69,9 @@ while running:
     reward = 0
     games += 1
     color_matrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+    move_time = 0
+    action_sequence=0
+    action=None
     
     #game logic
     while not game.game_over and running:
@@ -85,13 +85,6 @@ while running:
         game.update(dt, color_matrix)
         # chen's linear reward
         reward += 1 + game.lines_cleared
-
-        """
-        before:
-        forces soft drop
-        miscalculates horizontal movement
-        tries to rotate after hard drops
-        """
 
         ######   agent actions HERE
         if action:
@@ -120,16 +113,10 @@ while running:
                     # ### FIX: refresh coord to see if we reached target X
                     if game.current_piece.coord[0] == target_x:
                         action_sequence += 1
-                # third action sequence - drop the tetromino
+                # third action sequence - soft drop
                 elif action_sequence==2:
-                    # ### FIX: safely read drop_type OR default to HARD_DROP
-                    drop_type = action[3] if len(action) > 3 else HARD_DROP
-                    if drop_type == HARD_DROP:
-                        game.move_tetromino(HARD_DROP, color_matrix)
-                        action_sequence = 4
-                    else:
-                        game.soft_drop()
-                        action_sequence += 1
+                    game.soft_drop()
+                    action_sequence += 1
                 # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
                 elif action_sequence==3:
                     game.move_tetromino(action[2], color_matrix)
