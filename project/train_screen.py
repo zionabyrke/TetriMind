@@ -56,10 +56,6 @@ for y in range(ROWS):
 playfield_surface = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
-move_time = 0
-action_sequence=0
-action=None
-
 ### game loop
 running = True
 while running:
@@ -74,62 +70,9 @@ while running:
 
     h, b, col_heights = agent.get_game_states()  # game states
     temp = " ".join(map(str, col_heights)) #no space and brackets
-
-    """
-        before:
-        forces soft drop (walang condition kung ma soft drop o dae)
-        miscalculates horizontal movement
-        tries to rotate after hard drops
-        """
     
     ######   agent actions HERE
-    if action:
-        # do action in order
-        if(move_time <= agent.move_per_sec):
-            move_time += dt/1000
-        else:
-            # resets the move time
-            move_time = 0
-            # first action sequence - rotates tetromino to initial rotation
-            if action_sequence==0:
-                for rot in range(0 + action[0]):
-                    game.move_tetromino(ROTATE_RIGHT, color_matrix)
-                action_sequence += 1
-            # second action sequence - moves tetromino to drop x coordinate move by move, not instant
-            elif action_sequence==1:
-                target_x = action[1]
-                current_x = game.current_piece.coord[0]
-                dx = target_x - current_x
-                if dx < 0:
-                    game.move_tetromino(MOVE_LEFT, color_matrix)
-                    # ### FIX: do NOT modify dx manually, let game update coord
-                elif dx > 0:
-                    game.move_tetromino(MOVE_RIGHT, color_matrix)
-                    # ### FIX: same, do not modify dx here
-                # ### FIX: refresh coord to see if we reached target X
-                if game.current_piece.coord[0] == target_x:
-                    action_sequence += 1
-            # third action sequence - drop the tetromino
-            elif action_sequence==2:
-                # ### FIX: safely read drop_type OR default to HARD_DROP
-                drop_type = action[3] if len(action) > 3 else HARD_DROP
-                if drop_type == HARD_DROP:
-                    game.move_tetromino(HARD_DROP, color_matrix)
-                    action_sequence = 4
-                else:
-                    game.soft_drop()
-                    action_sequence += 1
-            # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
-            elif action_sequence==3:
-                game.move_tetromino(action[2], color_matrix)
-                action_sequence+=1
-            # finally we let the game place the block, then we clear action tuple and reset sequence
-            elif action_sequence==4:
-                game.update(game.fall_speed*1000+1, color_matrix)
-                action=None
-                action_sequence=0
-    else:
-        action = agent.choose_action(game)
+    agent.moves(game, agent, dt, color_matrix)
 
     screen.fill(GRAY)
     playfield_surface.fill(BLACK)
