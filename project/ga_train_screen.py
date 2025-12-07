@@ -130,6 +130,7 @@ while running:
             f"Population size: {agent.population_size}",
             f"Genome: {agent.current_genome_index}",
             f"Game: {games}",
+            f"Total pieces: {game.total_pieces}",
             f"Lines cleared: {game.lines_cleared_so_far}",
             f"Tspins: {game.tspins}",
             f"Tetrises: {game.tetris}"]

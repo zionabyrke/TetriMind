@@ -27,9 +27,15 @@ bag_p = Bag(seed)
 game_p = Game(bag_p)
 
 # AI components
+<<<<<<< HEAD
 bag_ai = Bag(seed)
 game_ai = Game(bag_ai)
 agent = GeneticAlgorithm(game_ai, play=True)
+=======
+ai_bag = Bag(seed)
+game_ai = Game(ai_bag)
+agent = GeneticAlgorithm(game_ai, reset=False)
+>>>>>>> 50f273e0295acd1d22d0885897d553020bc9f9bb
 agent.move_per_sec = 10/60
 # reset = True overwrites the saved file 
 

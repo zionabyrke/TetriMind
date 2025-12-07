@@ -20,24 +20,24 @@ agent = Agent(game)
 #game.current_piece = Tetromino("Z")
 game.current_piece = Tetromino("T")
 game.block_matrix = [
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,0,1,1,1,1],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,1,1,1],
         [1,1,1,1,1,0,0,0,1,1],
         [1,1,1,1,1,1,0,1,1,1]
         ]
@@ -111,7 +111,10 @@ while running:
     level_text = font_small.render(f"Level: {game.game_level}", True, LINE_COLOR)
     preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
     states_text = [f"Holes: {h}", f"Bumpiness: {b}", "Heights:", f"{temp}", 
-        f"Lines cleared: {game.lines_cleared_so_far}"]
+        f"Total pieces: {game.total_pieces}",
+        f"Lines cleared: {game.lines_cleared_so_far}",
+        f"Tspins: {game.tspins}",
+        f"Tetrises: {game.tetris}"]
     for x, text in enumerate(states_text):
         state_text = font_small.render(text, True, LINE_COLOR)
         sidebar_surface.blit(state_text, (PADDING, PADDING+150+(x*20)))
