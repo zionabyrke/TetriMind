@@ -51,10 +51,12 @@ class GeneticAlgorithm(Agent):
 
         # reset = saved best genomes will be overwritten
         self.reset = reset
-        if reset:
+        if reset or not self.load_best(): # unsuccessful
             self.init_population()
-        else:
-            self.load_best()
+        """else:
+            if not self.load_best(): # unsuccessful
+                self.init_population()"""
+
 
     # overwritten method by inheritance:
     def _evaluate_state(self, eval_game):
@@ -232,6 +234,8 @@ class GeneticAlgorithm(Agent):
             return False
         with open(path, "r") as f:
             data = json.load(f)
+        if len(self.genomes) == 0: # at least 1 genome
+            self.genomes.append({k: 0 for k in self.genes})
         for k in self.genes:
             self.genomes[0][k] = data["weights"][k]
         self.genomes[0]["id"] = data["id"]

@@ -8,7 +8,7 @@ testing_seed = 5
 #objects
 bag = Bag(testing_seed)
 game = Game(bag)
-agent = GeneticAlgorithm(game, reset=True)
+agent = GeneticAlgorithm(game, reset=False)
 # reset = True overwrites the saved file
 
 pygame.init()
