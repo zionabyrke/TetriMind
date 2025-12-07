@@ -148,6 +148,7 @@ class Game:
         self.bag = bag
         self.block_matrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
         self.next_piece = self.bag.pull()
+        self.total_pieces = 0
         self.generate_tetromino()
         self.fall_speed = BLOCKFALL_RATE / FRAMEPERSEC
         self.fall_timer = 0
@@ -169,7 +170,8 @@ class Game:
     def generate_tetromino(self):
         self.current_piece = self.next_piece
         self.next_piece = self.bag.pull()
-        
+        self.total_pieces += 1
+
         # collision on spawn = game over
         if self._check_collision(self.current_piece.coord[0],
                                  self.current_piece.coord[1],
@@ -467,7 +469,7 @@ class Game:
 
     def update_score(self, lines_cleared, is_tspin):
         if is_tspin:
-            self.tspins += 1
+            self.tspins += lines_cleared
             self.player_score += T_SPIN.get(lines_cleared, 0)
         else:
             if lines_cleared == 4:

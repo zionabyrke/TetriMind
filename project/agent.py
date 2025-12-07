@@ -5,7 +5,7 @@ class Agent:
     def __init__(self, game):
         self.game = game
         # move per sec is based on 60 frame per sec
-        self.move_per_sec = 2/60 # lower = faster
+        self.move_per_sec = 0/60 # lower = faster
 
         self.move_time=0
         self.action_sequence=0
