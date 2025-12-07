@@ -15,12 +15,8 @@ class Agent:
         return self.game.get_field_features()
 
     def moves(self, game, agent, dt, color_matrix):
-        """
-        before:
-        forces soft drop (walang condition kung ma soft drop o dae)
-        miscalculates horizontal movement
-        tries to rotate after hard drops
-        """
+        # agent passed is not Agent() so no self calling
+        # agent passed is GeneticAlgorithm() class
         if self.action:
             # do action in order
             if(self.move_time <= agent.move_per_sec):

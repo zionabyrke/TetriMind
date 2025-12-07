@@ -88,6 +88,8 @@ while running:
         reward += 1 + game.lines_cleared
 
         ######   agent actions HERE
+        # agent must be passed
+        # Agent() superclass != GeneticAlgorithm() subclass
         agent.moves(game, agent, dt, color_matrix)
 
         screen.fill(GRAY)
