@@ -60,7 +60,6 @@ while running:
         paused = True
 
     dt = clock.tick(FRAMEPERSEC)
-    game.update_clock(dt)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -108,6 +107,7 @@ while running:
     ### GAME LOGIC SECTION
     if not paused: #update only if not paused
         game.update(dt, color_matrix)
+        game.update_clock(dt)
         pause_label = "Pause"
     else: 
         pause_label = "Resume"

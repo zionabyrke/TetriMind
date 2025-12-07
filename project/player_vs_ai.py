@@ -80,8 +80,6 @@ while running:
         print(agent.get_current_weights())
 
     dt = clock.tick(FRAMEPERSEC)
-    game_p.update_clock(dt)
-    game_ai.update_clock(dt)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -149,6 +147,9 @@ while running:
         # update ai
         game_ai.update(dt, colorMatrix_ai)
         reward += 1 + game_ai.lines_cleared
+
+        game_p.update_clock(dt)
+        game_ai.update_clock(dt)
 
         # ai actions
         agent.moves(game_ai, agent, dt, colorMatrix_ai)
