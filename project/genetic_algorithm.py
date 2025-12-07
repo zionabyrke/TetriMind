@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 class GeneticAlgorithm(Agent):
     def __init__(self, game, reset=True, 
-            population_size=3, # test
+            population_size=6, # test
             mutation_rate=0.05, 
             mutation_step=0.2
     ):
