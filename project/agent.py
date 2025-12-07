@@ -15,7 +15,6 @@ class Agent:
         return self.game.get_field_features()
 
     def moves(self, game, agent, dt, color_matrix):
-        
         """
         before:
         forces soft drop (walang condition kung ma soft drop o dae)
@@ -24,49 +23,40 @@ class Agent:
         """
         if self.action:
             # do action in order
-            if self.move_time <= agent.move_per_sec:
-                self.move_time += dt / 1000
+            if(self.move_time <= agent.move_per_sec):
+                self.move_time += dt/1000
             else:
                 # resets the move time
                 self.move_time = 0
                 # first action sequence - rotates tetromino to initial rotation
-                if self.action_sequence == 0:
+                if self.action_sequence==0:
                     for rot in range(0 + self.action[0]):
                         game.move_tetromino(ROTATE_RIGHT, color_matrix)
                     self.action_sequence += 1
                 # second action sequence - moves tetromino to drop x coordinate move by move, not instant
-                elif self.action_sequence == 1:
-                    target_x = self.action[1]
-                    current_x = game.current_piece.coord[0]
-                    dx = target_x - current_x
+                elif self.action_sequence==1:
+                    dx = self.action[1] - game.current_piece.coord[0]
                     if dx < 0:
                         game.move_tetromino(MOVE_LEFT, color_matrix)
-                        # ### FIX: do NOT modify dx manually, let game update coord
+                        dx -= 1
                     elif dx > 0:
                         game.move_tetromino(MOVE_RIGHT, color_matrix)
-                        # ### FIX: same, do not modify dx here
-                    # ### FIX: refresh coord to see if we reached target X
-                    if game.current_piece.coord[0] == target_x:
+                        dx += 1
+                    if dx == 0:
                         self.action_sequence += 1
-                # third action sequence - drop the tetromino
-                elif self.action_sequence == 2:
-                    # ### FIX: safely read drop_type OR default to HARD_DROP
-                    drop_type = self.action[3] if len(self.action) > 3 else HARD_DROP
-                    if drop_type == HARD_DROP:
-                        game.move_tetromino(HARD_DROP, color_matrix)
-                        self.action_sequence = 4
-                    else:
-                        game.soft_drop()
-                        self.action_sequence += 1
+                # third action sequence - soft drop the tetromino
+                elif self.action_sequence==2:
+                    game.soft_drop()
+                    self.action_sequence+=1
                 # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
-                elif self.action_sequence == 3:
+                elif self.action_sequence==3:
                     game.move_tetromino(self.action[2], color_matrix)
-                    self.action_sequence += 1
+                    self.action_sequence+=1
                 # finally we let the game place the block, then we clear action tuple and reset sequence
-                elif self.action_sequence == 4:
-                    game.update(game.fall_speed * 1000 + 1, color_matrix)
-                    self.action = None
-                    self.action_sequence = 0
+                elif self.action_sequence==4:
+                    game.update(game.fall_speed*1000+1, color_matrix)
+                    self.action=None
+                    self.action_sequence=0
         else:
             self.action = agent.choose_action(game)
 

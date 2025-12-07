@@ -69,6 +69,10 @@ while running:
     reward = 0
     games += 1
     color_matrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+
+    agent.move_time=0
+    agent.action_sequence=0
+    agent.action=None
     
     #game logic
     while not game.game_over and running:
