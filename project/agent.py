@@ -1,4 +1,5 @@
 from game import Game
+from game import Game, Gamestate
 from settings import *
 
 class Agent:
@@ -101,5 +102,3 @@ class Agent:
         )
 
         return reward
-
-  

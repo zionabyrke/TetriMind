@@ -115,6 +115,10 @@ class Bag:
         self.rng.seed(seed)
         self._replenish_bag()
 
+    def _replenish_bag(self):
+        self.bag_arr = list(ShapeList.keys())
+        self.rng.shuffle(self.bag_arr)
+
 class Tetromino:
     def __init__(self, shape_type):
         self.coord = [(COLUMNS//2)-2, 0]

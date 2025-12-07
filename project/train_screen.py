@@ -109,16 +109,10 @@ while running:
                 # ### FIX: refresh coord to see if we reached target X
                 if game.current_piece.coord[0] == target_x:
                     action_sequence += 1
-            # third action sequence - drop the tetromino
+            # third action sequence - soft drop the tetromino
             elif action_sequence==2:
-                # ### FIX: safely read drop_type OR default to HARD_DROP
-                drop_type = action[3] if len(action) > 3 else HARD_DROP
-                if drop_type == HARD_DROP:
-                    game.move_tetromino(HARD_DROP, color_matrix)
-                    action_sequence = 4
-                else:
-                    game.soft_drop()
-                    action_sequence += 1
+                game.soft_drop()
+                action_sequence+=1
             # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
             elif action_sequence==3:
                 game.move_tetromino(action[2], color_matrix)
