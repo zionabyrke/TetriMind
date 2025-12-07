@@ -3,11 +3,8 @@ from game import Game, Bag
 from menu import show_menu
 import time
 import random
-<<<<<<< HEAD
 
 testing_seed = 5
-=======
->>>>>>> main
 
 pygame.init()
 
@@ -72,13 +69,8 @@ while running:
             if pause_rect.collidepoint(event.pos):
                 paused = not paused
             if reset_rect.collidepoint(event.pos):
-<<<<<<< HEAD
                 bag.reset(testing_seed)
                 game.reset(testing_seed)
-=======
-                bag.reset()
-                game.reset()
->>>>>>> main
                 color_matrix = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
                 paused = False
             if menu_rect.collidepoint(event.pos):

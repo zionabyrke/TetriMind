@@ -1,16 +1,16 @@
 from settings import *
-from game import Playfield, GameInfo
-from agent import Agent
-import json # import model
+from game import Game, Bag
+from genetic_algorithm import GeneticAlgorithm
 
 pygame.init()
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT + 40))
+screen = pygame.display.set_mode((WINDOW_WIDTH_vs, WINDOW_HEIGHT_vs + 40))
 pygame.display.set_caption("TetriMind — Player vs AI")
 clock = pygame.time.Clock()
+
 H_SPACING = 40 #space between the fields
 
 total_content_w = 2 * GAME_WIDTH + H_SPACING + 2 * RIGHTBAR_WIDTH
-left_margin = (WINDOW_WIDTH - total_content_w) // 2
+left_margin = (WINDOW_WIDTH_vs - total_content_w) // 2
 player_rightbar_x = left_margin + GAME_WIDTH + PADDING
 
 #x position
@@ -20,16 +20,16 @@ ai_rightbar_x = ai_x + GAME_WIDTH + PADDING
 # top vertical alignment
 top_y = 4 * PADDING + APPNAME_SIZE
 
-# Player component
-info_p = GameInfo()
-field_p = Playfield(info_p)
-info_p.field = field_p
+#objects
+seed = 5
+bag = Bag(seed)
+game_p = Game(bag)
 
 # AI components
-info_ai = GameInfo()
-field_ai = Playfield(info_ai)
-info_ai.field = field_ai
-agent_ai = Agent(info_ai)
+game_ai = Game(bag)
+agent = GeneticAlgorithm(game_ai, reset=False)
+agent.move_per_sec = 10/60
+# reset = True overwrites the saved file 
 
 colorMatrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
 colorMatrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
@@ -53,48 +53,28 @@ preview_surface_ai = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT * PREVIEW_HEIGH
 score_surface_ai = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT * SCORE_HEIGHT_FRACTION))
 
 #buttons
-pause_rect = pygame.Rect((WINDOW_WIDTH - GAME_WIDTH)//2, GAME_HEIGHT + APPNAME_SIZE + PADDING*4,
+pause_rect = pygame.Rect((WINDOW_WIDTH_vs - GAME_WIDTH)//2, GAME_HEIGHT + APPNAME_SIZE + PADDING*4,
                 GAME_WIDTH//3, 30 ) #30 height
 reset_rect = pygame.Rect(pause_rect.x + GAME_WIDTH//3, GAME_HEIGHT + APPNAME_SIZE + PADDING*4,
                 GAME_WIDTH//3, 30 ) #30 height
 menu_rect = pygame.Rect(pause_rect.x + (GAME_WIDTH//3)*2, GAME_HEIGHT + APPNAME_SIZE + PADDING*4,
                 GAME_WIDTH//3, 30 ) #30 height
 
-# Load GA model weights
-with open("rlga_v1.json", "r") as f:
-    ai_weights = json.load(f)
-
-# loader
-def evaluate_field_local(field):
-    holes, bumpiness, heights = field.getFieldFeatures()
-    maxH = max(heights)
-
-    return (
-        ai_weights.get("holes", 0)     * holes +
-        ai_weights.get("bumpiness", 0) * bumpiness +
-        ai_weights.get("maxHeight", 0) * maxH +
-        ai_weights.get("line1", 0) * (1 if field.lines_cleared == 1 else 0) +
-        ai_weights.get("line2", 0) * (1 if field.lines_cleared == 2 else 0) +
-        ai_weights.get("line3", 0) * (1 if field.lines_cleared == 3 else 0) +
-        ai_weights.get("line4", 0) * (1 if field.lines_cleared == 4 else 0) +
-        ai_weights.get("tspin1", 0) * (1 if field.lines_cleared == 1 and getattr(field, "tspin", False) else 0) +
-        ai_weights.get("tspin2", 0) * (1 if field.lines_cleared == 2 and getattr(field, "tspin", False) else 0) +
-        ai_weights.get("tspin3", 0) * (1 if field.lines_cleared == 3 and getattr(field, "tspin", False) else 0) +
-        ai_weights.get("perfectClear", 0) * (1 if all(sum(row) == 0 for row in field.blockMatrix) else 0)
-    )
-agent_ai.set_eval_function(evaluate_field_local)
-AI_ACTION_INTERVAL = 1  # seconds per action (adjust for difficulty)
-ai_action_accum = 0.0
-
 ##### GAME LOOP
 running = True
 paused = False
+reward = 0
 while running:
     # CHECK GAME OVER
-    if field_p.game_over or field_ai.game_over:
-        colorMatrix_p = [[field_p.currentPiece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
-        colorMatrix_ai = [[field_ai.currentPiece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
+    if game_p.game_over or game_ai.game_over:
+        colorMatrix_p = [[game_p.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
+        colorMatrix_ai = [[game_ai.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
         paused = True
+        agent.tournament(reward)
+        reward = 0
+        agent.move_time=0
+        agent.action_sequence=0
+        agent.action=None
 
     dt = clock.tick(FRAMEPERSEC)
     dt_s = dt / 1000.0 # convert to seconds
@@ -109,18 +89,19 @@ while running:
                 paused = not paused
             if reset_rect.collidepoint(event.pos):
                 # RESET BOTH PLAYER + AI
-                info_p = GameInfo()
-                field_p = Playfield(info_p)
-                info_p.field = field_p
+                bag.reset(seed)
+                game_p.reset(seed)
                 colorMatrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
-
-                info_ai = GameInfo()
-                field_ai = Playfield(info_ai)
-                info_ai.field = field_ai
+                game_ai.reset(seed)
                 colorMatrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+                agent.game = game_ai
+                agent.move_time=0
+                agent.action_sequence=0
+                agent.action=None
+                paused = False
 
             if menu_rect.collidepoint(event.pos):
-                running = False  # go back to menU (BREAK GAME LOOP)
+                pass
 
         # block all controls when paused
         elif paused:
@@ -137,7 +118,7 @@ while running:
                 held_keys.append(MOVE_DOWN)
 
             # apply the immediate move
-            field_p.moveTetromino(event.key, colorMatrix_p)
+            game_p.move_tetromino(event.key, colorMatrix_p)
 
         elif event.type == pygame.KEYUP:
             hold_delay = 0
@@ -154,33 +135,19 @@ while running:
         hold_delay += 1
         # Delay for 10 frames before player can fully hold, so it doesn't go too fast
         if hold_delay > 10:
-            field_p.moveTetromino(held_keys[-1], colorMatrix_p)
+            game_p.move_tetromino(held_keys[-1], colorMatrix_p)
 
     ### GAME LOGIC SECTION (update both boards)
     if not paused: #update only if not paused
         # update player
-        field_p.update(dt, colorMatrix_p)
-        info_p.updateGameInfo(dt)
+        game_p.update(dt, colorMatrix_p)
 
         # update ai
-        field_ai.update(dt, colorMatrix_ai)
-        info_ai.updateGameInfo(dt)
+        game_ai.update(dt, colorMatrix_ai)
+        reward += 1 + game_ai.lines_cleared
 
-        # AI action timing
-        ai_action_accum += dt_s
-        if ai_action_accum >= AI_ACTION_INTERVAL:
-            ai_action_accum -= AI_ACTION_INTERVAL
-
-            _, action_ai = agent_ai.chooseAction(field_ai, depth=2)
-            if action_ai:
-                # apply action on AI field
-                field_ai.moveTetromino(action_ai[0], colorMatrix_ai)
-                for _ in range(abs(action_ai[1])):
-                    if action_ai[1] < 0:
-                        field_ai.moveTetromino(MOVE_LEFT, colorMatrix_ai)
-                    else:
-                        field_ai.moveTetromino(MOVE_RIGHT, colorMatrix_ai)
-                field_ai.moveTetromino(action_ai[2], colorMatrix_ai)
+        # ai actions
+        agent.moves(game_ai, agent, dt, colorMatrix_ai)
 
     ### DISPLAY SECTION
     screen.fill(GRAY)
@@ -199,17 +166,17 @@ while running:
                                  (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
     # current tetromino shape
-    if field_p.currentPiece:
-        shape = field_p.currentPiece.getShapeArray()
-        ghost_coords = field_p.ghost_piece()
-        ghost_color = pygame.Color(field_p.currentPiece.color)
+    if game_p.current_piece:
+        shape = game_p.current_piece.get_shape_array()
+        ghost_coords = game_p.ghost_piece()
+        ghost_color = pygame.Color(game_p.current_piece.color)
         ghost_color.a = 64 #25% x 255 = 64 adjust
 
         # tetromino piece
         for dx, dy in shape:
-            pygame.draw.rect(playfield_surface_p, field_p.currentPiece.color,
-                             ((field_p.currentPiece.coord[0] + dx) * CELL_SIZE,
-                              (field_p.currentPiece.coord[1] + dy) * CELL_SIZE,
+            pygame.draw.rect(playfield_surface_p, game_p.current_piece.color,
+                             ((game_p.current_piece.coord[0] + dx) * CELL_SIZE,
+                              (game_p.current_piece.coord[1] + dy) * CELL_SIZE,
                               CELL_SIZE, CELL_SIZE))
         # ghost piece 
         ghost_surface.fill(ghost_color)
@@ -217,9 +184,9 @@ while running:
             playfield_surface_p.blit(ghost_surface, (gx * CELL_SIZE, gy * CELL_SIZE))
 
     # next tetromino piece
-    if field_p.nextPiece:
-        for x, y in field_p.nextPiece.getShapeArray():
-            pygame.draw.rect(preview_surface_p, field_p.nextPiece.color,
+    if game_p.next_piece:
+        for x, y in game_p.next_piece.get_shape_array():
+            pygame.draw.rect(preview_surface_p, game_p.next_piece.color,
                              ((x * CELL_SIZE) + 45, PADDING + (y * CELL_SIZE) + 30,
                               CELL_SIZE, CELL_SIZE))
 
@@ -230,19 +197,19 @@ while running:
                 pygame.draw.rect(playfield_surface_ai, color,
                                  (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
-    # current tetromino shape
-    if field_ai.currentPiece:
-        shape = field_ai.currentPiece.getShapeArray()
+    # current tetromino shape 
+    if game_ai.current_piece:
+        shape = game_ai.current_piece.get_shape_array()
         for dx, dy in shape:
-            pygame.draw.rect(playfield_surface_ai, field_ai.currentPiece.color,
-                             ((field_ai.currentPiece.coord[0] + dx) * CELL_SIZE,
-                              (field_ai.currentPiece.coord[1] + dy) * CELL_SIZE,
+            pygame.draw.rect(playfield_surface_ai, game_ai.current_piece.color,
+                             ((game_ai.current_piece.coord[0] + dx) * CELL_SIZE,
+                              (game_ai.current_piece.coord[1] + dy) * CELL_SIZE,
                               CELL_SIZE, CELL_SIZE))
 
     # next tetromino piece
-    if field_ai.nextPiece:
-        for x, y in field_ai.nextPiece.getShapeArray():
-            pygame.draw.rect(preview_surface_ai, field_ai.nextPiece.color,
+    if game_ai.next_piece:
+        for x, y in game_ai.next_piece.get_shape_array():
+            pygame.draw.rect(preview_surface_ai, game_ai.next_piece.color,
                              ((x * CELL_SIZE) + 45, PADDING + (y * CELL_SIZE) + 30,
                               CELL_SIZE, CELL_SIZE))
 
@@ -258,14 +225,14 @@ while running:
 
     # Title text
     title_text = font_title.render("TETRIMIND — PLAYER (LEFT)  vs  AI (RIGHT)", True, LINE_COLOR)
-    screen.blit(title_text, ((WINDOW_WIDTH - title_text.get_width()) // 2, PADDING))
+    screen.blit(title_text, ((WINDOW_WIDTH_vs - title_text.get_width()) // 2, PADDING))
 
     # Player UI panels
     # Score block (player)
     score_text = font_header.render("     SCORE:", True, LINE_COLOR)
-    score_amount = font_header.render(f"       {info_p.playerScore}", True, LINE_COLOR)
-    level_text = font_header.render(f"     LEVEL: {info_p.gameLevel}", True, LINE_COLOR)
-    time_text = font_header.render(f"     TIME: %02d:%02d" % ((info_p.elapsedTime//1000)//60, (info_p.elapsedTime//1000)%60), True, LINE_COLOR)
+    score_amount = font_header.render(f"       {game_p.player_score}", True, LINE_COLOR)
+    level_text = font_header.render(f"     LEVEL: {game_p.game_level}", True, LINE_COLOR)
+    time_text = font_header.render(f"     TIME: %02d:%02d" % ((game_p.elapsed_time//1000)//60, (game_p.elapsed_time//1000)%60), True, LINE_COLOR)
     score_surface_p.blit(score_text, (PADDING, PADDING))
     score_surface_p.blit(score_amount, (PADDING, PADDING+30))
     score_surface_p.blit(level_text, (PADDING, PADDING + 80))
@@ -274,9 +241,9 @@ while running:
 
     # AI UI panels (mirror)
     score_text_ai = font_header.render("     AI SCORE:", True, LINE_COLOR)
-    score_amount_ai = font_header.render(f"       {info_ai.playerScore}", True, LINE_COLOR)
-    level_text_ai = font_header.render(f"     LEVEL: {info_ai.gameLevel}", True, LINE_COLOR)
-    time_text_ai = font_header.render(f"     TIME: %02d:%02d" % ((info_ai.elapsedTime//1000)//60, (info_ai.elapsedTime//1000)%60), True, LINE_COLOR)
+    score_amount_ai = font_header.render(f"       {game_ai.player_score}", True, LINE_COLOR)
+    level_text_ai = font_header.render(f"     LEVEL: {game_ai.game_level}", True, LINE_COLOR)
+    time_text_ai = font_header.render(f"     TIME: %02d:%02d" % ((game_ai.elapsed_time//1000)//60, (game_ai.elapsed_time//1000)%60), True, LINE_COLOR)
     score_surface_ai.blit(score_text_ai, (PADDING, PADDING))
     score_surface_ai.blit(score_amount_ai, (PADDING, PADDING+30))
     score_surface_ai.blit(level_text_ai, (PADDING, PADDING + 80))
