@@ -1,3 +1,4 @@
+import random
 from settings import *
 from game import Game, Bag
 from genetic_algorithm import GeneticAlgorithm
@@ -21,7 +22,7 @@ ai_rightbar_x = ai_x + GAME_WIDTH + PADDING
 top_y = 4 * PADDING + APPNAME_SIZE
 
 #objects
-seed = 5
+seed = random.randint(0, 2**63-1)
 bag = Bag(seed)
 game_p = Game(bag)
 
@@ -89,10 +90,10 @@ while running:
                 paused = not paused
             if reset_rect.collidepoint(event.pos):
                 # RESET BOTH PLAYER + AI
-                bag.reset(seed)
+                seed = random.randint(0, 2**63-1)
                 game_p.reset(seed)
-                colorMatrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
                 game_ai.reset(seed)
+                colorMatrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
                 colorMatrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
                 agent.game = game_ai
                 agent.move_time=0

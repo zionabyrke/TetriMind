@@ -5,7 +5,7 @@ from agent import Agent
 from genetic_algorithm import GeneticAlgorithm
 import random
 
-seed = random.randint(1, 10)
+seed = random.randint(0, 2**63-1)
 #objects
 bag = Bag(seed)
 game = Game(bag)
@@ -149,7 +149,7 @@ while running:
 
     # randomize seed when all genomes finished
     if agent.current_genome_index == agent.population_size - 1:
-        seed = random.randint(1, random.randint(1, 1000))
+        seed = random.randint(0, 2**63-1)
         #print(seed)
 
     #### GA acts here
