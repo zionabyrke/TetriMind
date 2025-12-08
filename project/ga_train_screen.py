@@ -9,8 +9,15 @@ seed = random.randint(0, 2**63-1)
 #objects
 bag = Bag(seed)
 game = Game(bag)
-agent = GeneticAlgorithm(game, reset=False)
-# reset = True overwrites the saved file
+agent = GeneticAlgorithm(game)
+agent.load_progress()
+
+'''
+    USE load_progress() & save_progress()
+    FOR CONTINUOUS TRAINING
+    IT LOADS THE COMPLETE POPULATION FROM A FILE
+    PRIOR TO CLOSING THE APP
+'''
 
 pygame.init()
 screen = pygame.display.set_mode((GAME_WIDTH+RIGHTBAR_WIDTH+PADDING*3, GAME_HEIGHT+APPNAME_SIZE+PADDING*2))
@@ -128,7 +135,7 @@ while running:
         preview_text = font_small.render(f"Next Piece:", True, LINE_COLOR)
         states_text = [f"Generation: {agent.generation}", 
             f"Population size: {agent.population_size}",
-            f"Genome: {agent.current_genome_index}",
+            f"Genome: {agent.current_index}",
             f"Game: {games}",
             f"Total pieces: {game.total_pieces}",
             f"Lines cleared: {game.lines_cleared_so_far}",
@@ -148,15 +155,15 @@ while running:
         pygame.display.update()
 
     # randomize seed when all genomes finished
-    if agent.current_genome_index == agent.population_size - 1:
+    if agent.current_index == agent.population_size - 1:
         seed = random.randint(0, 2**63-1)
         #print(seed)
 
+    if agent.generation % 5 == 0:
+        agent.plot_fitness()
+
     #### GA acts here
     agent.tournament(reward)
+    agent.save_progress()
 
-    ## matplotlib logs only after an interval of generation is finised
-    intervals = 5
-    if agent.generation % intervals == 0.0:
-        agent.plot_fitness()
 pygame.quit()
