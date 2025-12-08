@@ -159,9 +159,6 @@ while running:
         seed = random.randint(0, 2**63-1)
         #print(seed)
 
-    if agent.generation % 5 == 0:
-        agent.plot_fitness()
-
     #### GA acts here
     agent.tournament(reward)
     agent.save_progress()

@@ -15,12 +15,15 @@ import matplotlib.pyplot as plt
 
 class GeneticAlgorithm(Agent):
     def __init__(self, game, play=False,
-            population_size=3, # test
+            population_size=120, # test
             mutation_rate=0.05, 
             mutation_step=0.2
     ):
         super().__init__(game)
         self.play = play
+        self.model = None
+        if self.play:
+            self.model = list(self.load_best())
 
         # ga hyperparameters
         self.population_size = population_size
@@ -50,13 +53,6 @@ class GeneticAlgorithm(Agent):
         self.current_index = 0
         self.generation = 0
         self.fitness_history = []
-
-    
-    """def play(self):
-        weights = self.load_best()
-        if weights is None:
-            self.init_population(size=1)"""
-
 
     """
         initializes N number of players
@@ -97,11 +93,10 @@ class GeneticAlgorithm(Agent):
 
     def feature_func(self, eval_game):
         features = eval_game.genetics_grid_features()
-
         w = []
         value = 0.0
         if self.play:
-            w = list(self.load_best())
+            w = list(self.model)
         else:
             w = self.population[self.current_index]
         
@@ -196,6 +191,7 @@ class GeneticAlgorithm(Agent):
         avg = sum(self.fitness) / len(self.fitness)
         self.fitness_history.append((self.generation, best, avg))
         print(f"[GEN {self.generation}] best={best:.2f} avg={avg:.2f}")
+        self.plot_fitness()
 
         self.fitness = [0.0 for _ in range(self.population_size)]
         self.generation += 1
@@ -223,6 +219,7 @@ class GeneticAlgorithm(Agent):
             data = json.load(f)
         self.generation = int(data["generation"])
         self.population = list(data["population"])
+        print(f"batch loaded from {filename}")
 
     def save_best(self, filename="best_genome_v0.json"):
         winner = max(range(self.population_size), key=lambda i: self.fitness[i])

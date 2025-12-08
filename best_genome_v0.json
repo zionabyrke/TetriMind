@@ -2,19 +2,19 @@
     "generation": 0,
     "index": 0,
     "weights": {
-        "holes": 0.04804473956598154,
-        "bumpiness": -0.4780839308857082,
-        "lines_cleared": -0.15363447366695404,
-        "weighted_height": -0.23028711297650006,
-        "cumulative_height": 0.3276344602715391,
-        "relative_height": 0.047554020876954484,
-        "vertical_hole_clusters": 0.10406167609660988,
-        "max_well_depth": 0.4870529581794877,
-        "sum_wells": -0.4331604335114567,
-        "weighted_filled_cells": -0.28657228555489067,
-        "landing_height": 0.08905689712097165,
-        "hole_depth": -0.2393543325257902,
-        "row_hole": -0.4752553334193955
+        "holes": -0.29372499658122564,
+        "bumpiness": -0.312580699158129,
+        "lines_cleared": -0.34225759098642783,
+        "weighted_height": -0.3523791731132626,
+        "cumulative_height": 0.05383238420274594,
+        "relative_height": 0.45114080068895623,
+        "vertical_hole_clusters": -0.2742221363154571,
+        "max_well_depth": -0.0697774910663822,
+        "sum_wells": 0.011142597600902193,
+        "weighted_filled_cells": 0.15428397755148138,
+        "landing_height": -0.48627028767172986,
+        "hole_depth": -0.29974995579122643,
+        "row_hole": 0.39508503942343687
     },
-    "fitness": 128
+    "fitness": 586
 }
