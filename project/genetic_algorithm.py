@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 """
     TO DO: SAVE AND LOG SEED
+    TRACK: PIECES SURVIVED, LINES CLEARED
     Genome means player
     Gene means set of weights
     population size min 60, avg 80, >120 max potential
@@ -16,7 +17,7 @@ import matplotlib.pyplot as plt
 
 class GeneticAlgorithm(Agent):
     def __init__(self, game, play=False,
-            population_size=120, # test
+            population_size=120,
             mutation_rate=0.05, 
             mutation_step=0.2
     ):
@@ -112,8 +113,6 @@ class GeneticAlgorithm(Agent):
     """
     def tournament(self, reward):
         self.fitness[self.current_index] = reward
-
-        self.save_best()
         self.current_index += 1
 
         # full generation evaluated?
@@ -170,6 +169,7 @@ class GeneticAlgorithm(Agent):
     """
     def evolve(self):
         top = self.top_players()
+        self.save_best()
         new_pop = []
 
         # elitism

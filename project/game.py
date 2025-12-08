@@ -220,13 +220,20 @@ class Game:
             if self._check_collision(_coords[0], _coords[1]+1, self.current_piece.get_shape_array()):
                 self.place_block(_coords, self.current_piece.get_shape_array(), color_matrix)
                 self.lines_cleared = self.check_line_clears(color_matrix)
-                self.lines_cleared_so_far += self.lines_cleared
                 self.generate_tetromino()
             else:
                 self.move_tetromino(MOVE_DOWN, color_matrix)
     
     def update_clock(self, dt):
         self.elapsed_time += dt
+
+    def update_level(self):
+        # levels up every 10(game_level) total lines cleared
+        target = 10*self.game_level
+
+        while self.lines_cleared_so_far >=target:
+            self.game_level+=1
+            target = 10*self.game_level
 
     def ghost_piece(self):
         x,y = self.current_piece.coord
@@ -445,6 +452,7 @@ class Game:
         # if we gets some line clears then we immediately update score
         if line_clears:
             self.update_score(line_clears, tspin)
+            self.update_level()
         return line_clears
 
     def _hard_drop(self, color_matrix):
@@ -476,6 +484,7 @@ class Game:
             if lines_cleared == 4:
                 self.tetris += 1
             self.player_score += LINE_SCORES.get(lines_cleared, 0)
+        self.lines_cleared_so_far += lines_cleared
 
     # extracts the game state from Game
     def copy(self):
