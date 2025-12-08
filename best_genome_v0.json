@@ -1,6 +1,6 @@
 {
     "generation": 0,
-    "index": 0,
+    "index": 24,
     "weights": {
         "holes": -0.29372499658122564,
         "bumpiness": -0.312580699158129,
@@ -16,5 +16,5 @@
         "hole_depth": -0.29974995579122643,
         "row_hole": 0.39508503942343687
     },
-    "fitness": 586
+    "fitness": 156
 }
