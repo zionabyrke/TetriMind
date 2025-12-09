@@ -59,6 +59,25 @@ class Agent:
         else:
             self.action = agent.choose_action(game)
 
+    def moves_instant(self, game, agent, dt, color_matrix):
+        if(self.move_time <= agent.move_per_sec):
+            self.move_time += dt/1000
+        else:
+            self.move_time = 0
+            self.action = agent.choose_action(game)
+            for rot in range(self.action[0]):
+                game.move_tetromino(ROTATE_RIGHT, color_matrix)
+            dx = self.action[1] - game.current_piece.coord[0]
+            for move in range(abs(dx)):
+                if dx < 0:
+                    game.move_tetromino(MOVE_LEFT, color_matrix)
+                else:
+                    game.move_tetromino(MOVE_RIGHT, color_matrix)
+            game.soft_drop()
+            game.move_tetromino(self.action[2], color_matrix)
+            game.update(game.fall_speed*1000+1, color_matrix)
+
+
     def get_next_states(self, game):
         game_copy = game.copy()
         piece = game_copy.current_piece

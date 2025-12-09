@@ -59,7 +59,9 @@ sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 ### game loop
 running = True
 while running:
-    dt = clock.tick(FRAMEPERSEC)
+    # Removed pygame clock tick delay of framespersec to get faster training
+    #dt = clock.tick(FRAMEPERSEC)
+    dt = clock.tick()
     
     if game.game_over:
         print("Game Over")
@@ -76,7 +78,8 @@ while running:
     temp = " ".join(map(str, col_heights)) #no space and brackets
     
     ######   agent actions HERE
-    agent.moves(game, agent, dt, color_matrix)
+    #agent.moves(game, agent, dt, color_matrix)
+    agent.moves_instant(game, agent, dt, color_matrix)
 
     screen.fill(GRAY)
     playfield_surface.fill(BLACK)
