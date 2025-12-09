@@ -84,7 +84,9 @@ while running:
     
     #game logic
     while not game.game_over and running:
-        dt = clock.tick(FRAMEPERSEC)
+        # Removed pygame clock tick delay of framespersec to get faster training
+        #dt = clock.tick(FRAMEPERSEC)
+        dt = clock.tick()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -95,7 +97,10 @@ while running:
         ######   agent actions HERE
         # agent must be passed
         # Agent() superclass != GeneticAlgorithm() subclass
-        agent.moves(game, agent, dt, color_matrix)
+        
+        #agent moves are instant during training but should be sequential for versus
+        #agent.moves(game, agent, dt, color_matrix)
+        agent.moves_instant(game, agent, dt, color_matrix)
 
         # chen's linear reward 
         # (here because agent.moves has game update inside)
