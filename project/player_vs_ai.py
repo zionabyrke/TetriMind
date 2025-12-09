@@ -65,19 +65,16 @@ menu_rect = pygame.Rect(pause_rect.x + (GAME_WIDTH//3)*2, GAME_HEIGHT + APPNAME_
 ##### GAME LOOP
 running = True
 paused = False
-reward = 0
 while running:
     # CHECK GAME OVER
     if game_p.game_over or game_ai.game_over:
         colorMatrix_p = [[game_p.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
         colorMatrix_ai = [[game_ai.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
         paused = True
-        agent.tournament(reward)
-        reward = 0
+
         agent.move_time=0
         agent.action_sequence=0
         agent.action=None
-        print(agent.get_current_weights())
 
     dt = clock.tick(FRAMEPERSEC)
 
