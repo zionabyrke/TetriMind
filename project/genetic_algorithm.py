@@ -6,6 +6,8 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 """
+    TO DO: SAVE AND LOG SEED
+    TRACK: PIECES SURVIVED, LINES CLEARED
     Genome means player
     Gene means set of weights
     population size min 60, avg 80, >120 max potential
@@ -15,20 +17,13 @@ import matplotlib.pyplot as plt
 
 class GeneticAlgorithm(Agent):
     def __init__(self, game, play=False,
-            population_size=120, # test
+            population_size=120,
             mutation_rate=0.05, 
             mutation_step=0.2
     ):
         super().__init__(game)
         self.play = play
         self.model = None
-        if self.play:
-            self.model = list(self.load_best())
-
-        # ga hyperparameters
-        self.population_size = population_size
-        self.mutation_rate = mutation_rate
-        self.mutation_step = mutation_step
         self.gene_labels = [ # labeling
             "holes",
             "bumpiness",
@@ -46,14 +41,21 @@ class GeneticAlgorithm(Agent):
         ]
         self.gene_len = len(self.gene_labels)
 
-        self.population = self.init_population()
-        # fitness aligned with population indexes
-        self.fitness = [0.0 for _ in range(self.population_size)]
+        if self.play:
+            self.model = list(self.load_best())
+        else:
+            # ga hyperparameters
+            self.population_size = population_size
+            self.mutation_rate = mutation_rate
+            self.mutation_step = mutation_step
+            self.population = self.init_population()
 
-        self.current_index = 0
-        self.generation = 0
-        self.fitness_history = []
-
+            # fitness aligned with population indexes
+            self.fitness = [0.0 for _ in range(self.population_size)]
+            self.current_index = 0
+            self.generation = 0
+            self.fitness_history = []    
+        
     """
         initializes N number of players
         with random weights for every feature key
@@ -96,7 +98,7 @@ class GeneticAlgorithm(Agent):
         w = []
         value = 0.0
         if self.play:
-            w = list(self.model)
+            w = self.model
         else:
             w = self.population[self.current_index]
         
@@ -111,8 +113,6 @@ class GeneticAlgorithm(Agent):
     """
     def tournament(self, reward):
         self.fitness[self.current_index] = reward
-
-        self.save_best()
         self.current_index += 1
 
         # full generation evaluated?
@@ -126,8 +126,8 @@ class GeneticAlgorithm(Agent):
     this favors higher-ranked genomes but keeps randomness
     """
     def random_parent(self, survivors):
-        L = len(survivors)
-        idx = int((random.random() ** 2) * (L - 1))
+        M = len(survivors)
+        idx = int((random.random() ** 2) * (M - 1))
         return survivors[idx]
 
     """
@@ -169,6 +169,7 @@ class GeneticAlgorithm(Agent):
     """
     def evolve(self):
         top = self.top_players()
+        self.save_best()
         new_pop = []
 
         # elitism

@@ -166,6 +166,6 @@ while running:
 
     #### GA acts here
     agent.tournament(reward)
-    agent.save_progress()
-
+    
+agent.save_progress()
 pygame.quit()
