@@ -70,9 +70,7 @@ class GeneticAlgorithm(Agent):
 
     # overwritten method by inheritance:
     def _evaluate_state(self, eval_game):
-        tspin = eval_game.is_tspin()
         lines_cleared = eval_game.check_line_clears()
-        eval_game.update_score(lines_cleared, tspin)
 
         value = self.feature_func(eval_game)
         return value
