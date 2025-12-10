@@ -33,8 +33,8 @@ agent = GeneticAlgorithm(game_ai, play=True)
 agent.move_per_sec = 10/60
 # reset = True overwrites the saved file 
 
-colorMatrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
-colorMatrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+color_matrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+color_matrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
 
 held_keys = []
 hold_delay = 0
@@ -68,8 +68,8 @@ paused = False
 while running:
     # CHECK GAME OVER
     if game_p.game_over or game_ai.game_over:
-        colorMatrix_p = [[game_p.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
-        colorMatrix_ai = [[game_ai.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
+        color_matrix_p = [[game_p.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
+        color_matrix_ai = [[game_ai.current_piece.color for _ in range(COLUMNS)] for _ in range(ROWS)]
         paused = True
 
         agent.move_time=0
@@ -91,8 +91,8 @@ while running:
                 seed = random.randint(0, 2**63-1)
                 game_p.reset(seed)
                 game_ai.reset(seed)
-                colorMatrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
-                colorMatrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+                color_matrix_p = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
+                color_matrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
                 agent.game = game_ai
                 agent.move_time=0
                 agent.action_sequence=0
@@ -117,7 +117,7 @@ while running:
                 held_keys.append(MOVE_DOWN)
 
             # apply the immediate move
-            game_p.move_tetromino(event.key, colorMatrix_p)
+            game_p.move_tetromino(event.key, color_matrix_p)
 
         elif event.type == pygame.KEYUP:
             hold_delay = 0
@@ -134,22 +134,33 @@ while running:
         hold_delay += 1
         # Delay for 10 frames before player can fully hold, so it doesn't go too fast
         if hold_delay > 10:
-            game_p.move_tetromino(held_keys[-1], colorMatrix_p)
+            game_p.move_tetromino(held_keys[-1], color_matrix_p)
 
     ### GAME LOGIC SECTION (update both boards)
     if not paused: #update only if not paused
         # update player
-        game_p.update(dt, colorMatrix_p)
+        game_p.garbage(game_ai)
+        game_ai.garbage(game_p)
 
-        # update ai
-        game_ai.update(dt, colorMatrix_ai)
-        reward += 1 + game_ai.lines_cleared
+        if game_p.garbage_queue > game_ai.garbage_queue:
+            game_ai.apply_garbage(color_matrix_ai)
+        elif game_ai.garbage_queue > game_p.garbage_queue:
+            game_p.apply_garbage(color_matrix_p)
+
+        game_p.garbage_queue = 0
+        game_ai.garbage_queue = 0
+
+        game_p.update(dt, color_matrix_p)
+        game_ai.update(dt, color_matrix_ai)
 
         game_p.update_clock(dt)
         game_ai.update_clock(dt)
 
+        game_p.update_fallspeed()
+        game_ai.update_fallspeed()
+
         # ai actions
-        agent.moves(game_ai, agent, dt, colorMatrix_ai)
+        agent.moves(game_ai, agent, dt, color_matrix_ai)
 
     ### DISPLAY SECTION
     screen.fill(GRAY)
@@ -161,7 +172,7 @@ while running:
     score_surface_ai.fill(BLACK)
 
     # playfield blocks 
-    for y, row in enumerate(colorMatrix_p):
+    for y, row in enumerate(color_matrix_p):
         for x, color in enumerate(row):
             if color != BLACK:
                 pygame.draw.rect(playfield_surface_p, color,
@@ -193,7 +204,7 @@ while running:
                               CELL_SIZE, CELL_SIZE))
 
     # AI playfield draw
-    for y, row in enumerate(colorMatrix_ai):
+    for y, row in enumerate(color_matrix_ai):
         for x, color in enumerate(row):
             if color != BLACK:
                 pygame.draw.rect(playfield_surface_ai, color,

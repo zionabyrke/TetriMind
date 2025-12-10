@@ -5,8 +5,8 @@ import json
 import os
 import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use("Agg") # non-GUI
 """
-    TO DO: SAVE AND LOG SEED
     TRACK: PIECES SURVIVED, LINES CLEARED
     Genome means player
     Gene means set of weights
@@ -27,7 +27,6 @@ class GeneticAlgorithm(Agent):
         self.gene_labels = [ # labeling
             "holes",
             "bumpiness",
-            "lines_cleared",
             "weighted_height",
             "cumulative_height",
             "relative_height",
@@ -65,8 +64,8 @@ class GeneticAlgorithm(Agent):
         genomes = []
         for _ in range(self.population_size):
             genes = [(random.random() - 0.5) for _ in range(self.gene_len)]
-            genomes.append(tuple(genes))
-        return genomes # list of tuples
+            genomes.append(genes)
+        return genomes # list of lists
 
     # overwritten method by inheritance:
     def _evaluate_state(self, eval_game):
@@ -110,7 +109,10 @@ class GeneticAlgorithm(Agent):
     when all genomes in the population are evaluated, calls evolve()
     """
     def tournament(self, reward):
+        top = max(self.fitness)
         self.fitness[self.current_index] = reward
+        if reward > top:
+            self.save_best()
         self.current_index += 1
 
         # full generation evaluated?
@@ -145,18 +147,17 @@ class GeneticAlgorithm(Agent):
         baby = []
         for a, b in zip(mum, dad):
             baby.append(a if random.random() < 0.5 else b)
-        return tuple(baby)
+        return baby
 
     """
     mutation rate 0.05=5% chance of mutation
     """
     def mutate(self, genome):
-        g = list(genome)
+        g = genome[:]
         for i in range(self.gene_len):
             if random.random() < self.mutation_rate:
-                # cc: https://github.com/mzmousa/tetris-ai?tab=readme-ov-file
                 g[i] += random.uniform(-self.mutation_step, self.mutation_step)
-        return tuple(g)
+        return g
 
     """
     Perform the generation update:
@@ -167,12 +168,11 @@ class GeneticAlgorithm(Agent):
     """
     def evolve(self):
         top = self.top_players()
-        self.save_best()
         new_pop = []
 
         # elitism
         winner = top[0]
-        new_pop.append(self.population[winner])
+        new_pop.append(self.population[winner][:])#append+copy
 
         # generate the rest
         while len(new_pop) < self.population_size:
@@ -197,13 +197,16 @@ class GeneticAlgorithm(Agent):
 
     """
     makes sure training not be interrupted
-    START FROM SCRATCH BECAUSE SEED IS RANDOM
     """
     def save_progress(self, filename="gene_batch.json"):
-        #data = dict(zip({k for k in range(self.population_size)}, self.population))
         data = {
+            "seed": self.game.bag.seed,
             "generation": self.generation,
+            "current_index": self.current_index - 1,
+            "population_size": self.population_size,
             "population": self.population,
+            "fitness": self.fitness,
+            "fitness_history": self.fitness_history,
         }
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
@@ -216,17 +219,23 @@ class GeneticAlgorithm(Agent):
             return None
         with open(filename, "r") as f:
             data = json.load(f)
-        self.generation = int(data["generation"])
-        self.population = list(data["population"])
+        self.game.bag.seed = data["seed"]
+        self.generation = data["generation"]
+        self.current_index = data["current_index"]
+        self.population_size = data["population_size"]
+        self.population = data["population"]
+        self.fitness = data["fitness"]
+        self.fitness_history = data["fitness_history"]
         print(f"batch loaded from {filename}")
 
     def save_best(self, filename="best_genome_v0.json"):
+        # index of winner
         winner = max(range(self.population_size), key=lambda i: self.fitness[i])
         data = {
             "generation": self.generation,
-            "index": self.current_index,
+            "index": winner,
             "weights": dict(zip(self.gene_labels, self.population[winner])),
-            "fitness": self.fitness[self.current_index],
+            "fitness": self.fitness[winner],
         }
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
@@ -251,8 +260,6 @@ class GeneticAlgorithm(Agent):
 
     
     def plot_fitness(self, filename="fitness_plot.png"):
-        matplotlib.use("Agg")   # non-GUI
-
         if not self.fitness_history:
             print("no fitness history")
             return
@@ -261,7 +268,7 @@ class GeneticAlgorithm(Agent):
         best = [b for _, b, _ in self.fitness_history]
         avg  = [a for _, _, a in self.fitness_history]
 
-        fig, ax = plt.subplots(figsize=(10, 5))  # create figure (required to save PNG)
+        fig, ax = plt.subplots(figsize=(10, 5))
 
         ax.plot(gens, best, label="best")
         ax.plot(gens, avg, label="avg")
@@ -274,4 +281,4 @@ class GeneticAlgorithm(Agent):
         fig.savefig(filename, dpi=150, bbox_inches="tight")
         plt.close(fig)
 
-        print(f"fitness PNG saved to {filename}") 
+        print(f"fitness PNG saved to {filename}")

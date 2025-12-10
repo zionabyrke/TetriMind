@@ -5,6 +5,8 @@ import copy
 
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
+GARBAGE_TABLE_NORMAL = {1: 0, 2: 1, 3: 2, 4: 4}
+GARBAGE_TABLE_TSPIN = {1: 2, 2: 4, 3: 6 }
 BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
 
 #shapeList disctionary
@@ -166,8 +168,11 @@ class Game:
         self.tetris = 0
         self.last_action = None
         self.game_over = False
+        self.tspin_now = False
+        self.garbage_queue = 0
 
     def generate_tetromino(self):
+        self.tspin_now = False
         self.current_piece = self.next_piece
         self.next_piece = self.bag.pull()
         self.total_pieces += 1
@@ -234,6 +239,16 @@ class Game:
         while self.lines_cleared_so_far >=target:
             self.game_level+=1
             target = 10*self.game_level
+
+    def update_fallspeed(self):
+        previous_L = self.game_level
+        if self.game_level != previous_L:
+            level = max(previous_L, self.game_level)
+            # https://harddrop.com/wiki/Tetris_Worlds
+            time = (0.8-((level-1) * 0.007))**(level-1)
+            if time <= 0.0: # limit
+                time = 0.000001 #16666fps??? unreachable level
+            self.fall_speed = time/FRAMEPERSEC
 
     def ghost_piece(self):
         x,y = self.current_piece.coord
@@ -362,7 +377,6 @@ class Game:
         return {
             "holes": holes,
             "bumpiness": bumpiness,
-            "lines_cleared": self.lines_cleared,
             "weighted_height": weighted_height,
             "cumulative_height": cumulative_height,
             "relative_height": relative_height,
@@ -437,7 +451,7 @@ class Game:
     def check_line_clears(self, color_matrix=None):
         # Check for any completed line from the y pos of current piece up to y+4
         line_clears = 0
-        tspin = self.is_tspin()
+        self.tspin_now = self.is_tspin()
         for y in range(self.current_piece.coord[1], self.current_piece.coord[1]+4):
             if y >= ROWS:
                 break
@@ -451,7 +465,7 @@ class Game:
         
         # if we gets some line clears then we immediately update score
         if line_clears:
-            self.update_score(line_clears, tspin)
+            self.update_score(line_clears, self.tspin_now)
             self.update_level()
         return line_clears
 
@@ -511,6 +525,57 @@ class Game:
         # Dapat pala irereset yung bag before i call yung init, nabaliktad ko dati kaya di same yung nagpapakita kahit same seed
         self.bag.reset(seed)
         self.__init__(self.bag)
+
+    def garbage(self, enemy):
+        '''
+        queue garbage for enemy based on player's last line clear/tspin
+        source: https://tetris.wiki/Garbage
+        '''
+        if self.lines_cleared == 0:
+            return
+        # garbage lines
+        if self.tspin_now:
+            garbage_lines = GARBAGE_TABLE_TSPIN.get(self.lines_cleared, 0)
+        else:
+            garbage_lines = GARBAGE_TABLE_NORMAL.get(self.lines_cleared, 0)
+        # B2B bonus
+        if self.tspin_now or self.lines_cleared == 4:
+            if self.tspin_now:
+                garbage_lines += 1
+            else:
+                garbage_lines += 2
+        # combo bonus
+        if self.lines_cleared > 1:
+            garbage_lines += self.lines_cleared - 1
+        # perfect clear bonus
+        """if all(all(cell != 0 for cell in row) for row in self.block_matrix):
+            garbage_lines += 3"""
+
+        # queue garbage for enemy
+        garbage_lines = max(1, min(garbage_lines, 3))
+        enemy.garbage_queue += garbage_lines
+
+    def apply_garbage(self, color_matrix):
+        lines_to_add = max(1, min(self.garbage_queue, 3))
+
+        # remove top rows
+        for _ in range(lines_to_add):
+            self.block_matrix.pop(0)
+            color_matrix.pop(0)
+
+        # append garbage rows at bottom
+        for _ in range(lines_to_add):
+            hole = random.randint(0, COLUMNS - 1)
+            row = [1] * COLUMNS
+            row[hole] = 0
+            color_row = ["#FFFFFF00"] * COLUMNS
+            color_row[hole] = "#00000000"
+
+            self.block_matrix.append(row)
+            color_matrix.append(color_row)
+
+        self.garbage_queue = 0
+
 
 # to add:
 # save_game()

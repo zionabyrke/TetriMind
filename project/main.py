@@ -108,6 +108,8 @@ while running:
     if not paused: #update only if not paused
         game.update(dt, color_matrix)
         game.update_clock(dt)
+        game.update_level()
+        game.update_fallspeed()
         pause_label = "Pause"
     else: 
         pause_label = "Resume"
