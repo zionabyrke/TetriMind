@@ -325,9 +325,12 @@ class TetriMindMenu:
                 print(f"Starting game - Mode: {self.game_mode}")
                 self.start_game = True  
                 self.show_setup = False
-            else:
-                print("AI mode not implemented yet!")
-            return
+                return
+            if self.game_mode == "ai":
+                print(f"Starting AI Game — Difficulty: {self.ai_difficulty}")
+                self.start_game = True
+                self.show_setup = False
+                return
         
     def run(self):
         running = True
@@ -371,11 +374,14 @@ class TetriMindMenu:
         
         # Stop music when exiting menu
         stop_menu_music(fade_ms=1000)
+
+        pygame.quit()
         
         # Return the selected settings
         return self.game_mode, self.ai_difficulty
 
 def show_menu():
+    pygame.init()
     menu = TetriMindMenu()
     game_mode, ai_difficulty = menu.run()
     return game_mode, ai_difficulty
