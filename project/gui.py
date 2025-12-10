@@ -36,7 +36,7 @@ player_rightbar_x = left_margin + GAME_WIDTH + PADDING
 ai_x = player_rightbar_x + RIGHTBAR_WIDTH + H_SPACING
 ai_rightbar_x = ai_x + GAME_WIDTH + PADDING
 # top vertical alignment
-top_y = PADDING + APPNAME_SIZE + 5
+top_y = PADDING + APPNAME_SIZE + 7
 
 
 class RendererSolo:
@@ -299,7 +299,7 @@ class RendererVs(RendererSolo):
         score_surface_ai.fill(BLACK)
 
         # Title text
-        title_text = font_title.render("TETRIMIND — PLAYER (LEFT)  vs  AI (RIGHT)", False, LINE_COLOR)
+        title_text = font_title.render("TETRIMIND — PLAYER (LEFT)  vs  AI (RIGHT)", True, LINE_COLOR)
         self.screen.blit(title_text, ((WINDOW_WIDTH_vs - title_text.get_width()) // 2, PADDING))
 
         self.playfield(game_h, playfield_surface, preview_surface, self.color_matrix)

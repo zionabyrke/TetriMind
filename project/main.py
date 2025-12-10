@@ -30,8 +30,8 @@ agent.move_per_sec = 10/60
 
 if __name__ == "__main__":
     ###### uncomment if try the other
-    renderer.run(game)
-    #renderer_vs.run(game, agent)
+    #renderer.run(game)
+    renderer_vs.run(game, agent)
 
 
 
