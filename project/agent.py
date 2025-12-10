@@ -60,7 +60,7 @@ class Agent:
             self.action = agent.choose_action(game)
 
     def moves_instant(self, game, agent, dt, color_matrix):
-        if(self.move_time <= agent.move_per_sec):
+        if(self.move_time < agent.move_per_sec):
             self.move_time += dt/1000
         else:
             self.move_time = 0

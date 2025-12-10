@@ -141,11 +141,11 @@ while running:
         # update player
         game_p.garbage(game_ai)
         game_ai.garbage(game_p)
-
-        if game_p.garbage_queue > game_ai.garbage_queue:
-            game_ai.apply_garbage(color_matrix_ai)
-        elif game_ai.garbage_queue > game_p.garbage_queue:
+        
+        if game_p.garbage_queue:
             game_p.apply_garbage(color_matrix_p)
+        elif game_ai.garbage_queue:
+            game_ai.apply_garbage(color_matrix_ai)
 
         game_p.garbage_queue = 0
         game_ai.garbage_queue = 0

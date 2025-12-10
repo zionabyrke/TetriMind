@@ -554,6 +554,7 @@ class Game:
         # queue garbage for enemy
         garbage_lines = max(1, min(garbage_lines, 3))
         enemy.garbage_queue += garbage_lines
+        self.lines_cleared = 0
 
     def apply_garbage(self, color_matrix):
         lines_to_add = max(1, min(self.garbage_queue, 3))
