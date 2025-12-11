@@ -3,6 +3,7 @@ import time
 import random
 
 pygame.init()
+
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
 font_header = pygame.font.SysFont("consolas", 18)
 font_style_ai = pygame.font.SysFont("consolas", 14)
@@ -51,6 +52,7 @@ class RendererSolo:
         self.paused = False
         self.is_reset = False
         self.pause_label = "Pause"
+        self.is_menu = False
 
         self.held_keys = []
         self.hold_delay = 0
@@ -59,6 +61,9 @@ class RendererSolo:
         while self.running:
             dt = self.clock.tick(FRAMEPERSEC)
             self.get_input(game)
+
+            if self.is_menu:
+                return True
 
             ### GAME LOGIC SECTION
             if self.is_reset or game.game_over:
@@ -74,7 +79,8 @@ class RendererSolo:
             self.display_section(game)
 
             pygame.display.update()
-        pygame.quit()
+
+        return False # user wants quit
 
     def get_input(self, game):
         for event in pygame.event.get():
@@ -87,7 +93,8 @@ class RendererSolo:
                 if reset_rect.collidepoint(event.pos):
                     self.is_reset = True
                 if menu_rect.collidepoint(event.pos):
-                    pass # MENU SCREEN HERE
+                    self.is_menu = True
+                    return
             elif self.paused == True:
                 continue # no moving actions till resumed
             elif event.type == pygame.KEYDOWN:
@@ -241,12 +248,14 @@ class RendererVs(RendererSolo):
         self.screen.fill(GRAY)
         self.color_matrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
 
-    def run(self, game_p, game_ai, agent):
+    def run(self, game_p, game_ai, agent, garbo=False):
         while self.running:
             dt = self.clock.tick(FRAMEPERSEC)
 
-            # only game_p can reset (advantage)
             self.get_input(game_p)
+
+            if self.is_menu:
+                return True
 
             ### GAME LOGIC SECTION
             if self.is_reset or game_p.game_over or game_ai.game_over:
@@ -258,7 +267,7 @@ class RendererVs(RendererSolo):
                 self.__init__(self.screen)
 
             if not self.paused: #update only if not paused
-                self.updates(game_p, game_ai, dt)
+                self.updates(game_p, game_ai, dt, garbo)
                 self.pause_label = "Pause"
 
                 # agent actions
@@ -268,20 +277,22 @@ class RendererVs(RendererSolo):
 
             self.display_section(game_p, game_ai)
             pygame.display.update()
-        pygame.quit()
-
-
-    def updates(self, game_h, game_ai, dt):
-        game_h.garbage(game_ai)
-        game_ai.garbage(game_h)
         
-        if game_h.garbage_queue:
-            game_h.apply_garbage(self.color_matrix)
-        elif game_ai.garbage_queue:
-            game_ai.apply_garbage(self.color_matrix_ai)
+        return False# user wants quit
 
-        game_h.garbage_queue = 0
-        game_ai.garbage_queue = 0
+
+    def updates(self, game_h, game_ai, dt, garbo):
+        if garbo:
+            game_h.garbage(game_ai)
+            game_ai.garbage(game_h)
+            
+            if game_h.garbage_queue:
+                game_h.apply_garbage(self.color_matrix)
+            elif game_ai.garbage_queue:
+                game_ai.apply_garbage(self.color_matrix_ai)
+
+            game_h.garbage_queue = 0
+            game_ai.garbage_queue = 0
 
         game_h.update(dt, self.color_matrix)
         game_ai.update(dt, self.color_matrix_ai)
