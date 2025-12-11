@@ -3,7 +3,6 @@ from genetic_algorithm import GeneticAlgorithm
 from game import Game, Bag
 from menu import show_menu
 from settings import *
-import random
 import time
 
 pygame.init()
@@ -16,7 +15,7 @@ pygame.display.init()"""
 screen = pygame.display.set_mode((WINDOW_WIDTH_vs, WINDOW_HEIGHT_vs+40))
 pygame.display.set_caption("TetriMind")
 
-seed = random.shuffle([1,2,3,4,5])
+seed = 5 # bawal mag random dito kasi nitatrack pala ni random.seed hahaha
 bag = Bag(seed)
 game = Game(bag)
 renderer = RendererSolo(screen)
@@ -31,7 +30,7 @@ agent.move_per_sec = 10/60
 if __name__ == "__main__":
     ###### uncomment if try the other
     #renderer.run(game)
-    renderer_vs.run(game, agent)
+    renderer_vs.run(game, game_ai, agent)
 
 
 

@@ -5,6 +5,7 @@ import random
 pygame.init()
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
 font_header = pygame.font.SysFont("consolas", 18)
+font_style_ai = pygame.font.SysFont("consolas", 14)
 font_style = pygame.font.SysFont("consolas", 12)
 
 # surfaces 
@@ -18,6 +19,7 @@ ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 playfield_surface_ai = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 preview_surface_ai = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT * PREVIEW_HEIGHT_FRACTION - PADDING))
 score_surface_ai = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT * SCORE_HEIGHT_FRACTION))
+sidebar_surface = pygame.Surface((RIGHTBAR_WIDTH, GAME_HEIGHT))
 
 #buttons
 pause_rect = pygame.Rect((WINDOW_WIDTH_vs-GAME_WIDTH)//2, GAME_HEIGHT+APPNAME_SIZE+PADDING*2,
@@ -59,7 +61,7 @@ class RendererSolo:
             self.get_input(game)
 
             ### GAME LOGIC SECTION
-            if self.is_reset:
+            if self.is_reset or game.game_over:
                 game.reset(game.bag.seed)
                 self.__init__(self.screen)
             if not self.paused: #update only if not paused
@@ -239,32 +241,32 @@ class RendererVs(RendererSolo):
         self.screen.fill(GRAY)
         self.color_matrix_ai = [[BLACK for _ in range(COLUMNS)] for _ in range(ROWS)]
 
-    def run(self, human_player, agent):
-        game_ai = agent.game
+    def run(self, game_p, game_ai, agent):
         while self.running:
             dt = self.clock.tick(FRAMEPERSEC)
 
-            # only human_player can reset (advantage)
-            self.get_input(human_player)
+            # only game_p can reset (advantage)
+            self.get_input(game_p)
 
             ### GAME LOGIC SECTION
-            if self.is_reset:
-                human_player.reset(human_player.bag.seed)
-                agent.game.reset(game_ai.bag.seed)
+            if self.is_reset or game_p.game_over or game_ai.game_over:
+                game_p.reset(game_p.bag.seed)
+                game_ai.reset(game_ai.bag.seed)
                 agent.move_time=0
                 agent.action_sequence=0
                 agent.action=None
                 self.__init__(self.screen)
+
             if not self.paused: #update only if not paused
-                self.updates(human_player, game_ai, dt)
+                self.updates(game_p, game_ai, dt)
                 self.pause_label = "Pause"
+
+                # agent actions
+                agent.moves(game_ai, agent, dt, self.color_matrix_ai)
             else: 
                 self.pause_label = "Resume"
 
-             # agent actions
-            agent.moves(game_ai, agent, dt, self.color_matrix_ai)
-
-            self.display_section(human_player, game_ai)
+            self.display_section(game_p, game_ai)
             pygame.display.update()
         pygame.quit()
 
