@@ -149,11 +149,17 @@ class Game:
     def __init__(self, bag):
         self.bag = bag
         self.block_matrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
-        self.next_piece = self.bag.pull()
+        # For optimization, because when copying we don't need to pull from the bag 
+        # So bag is None when copying
         self.total_pieces = 0
-        self.generate_tetromino()
         self.fall_speed = BLOCKFALL_RATE / FRAMEPERSEC
         self.fall_timer = 0
+        if bag:
+            self.next_piece = self.bag.pull()
+            self.generate_tetromino()
+        else:
+            self.next_piece = None
+            self.current_piece = None
 
         #game info
         self.player_score = 0
@@ -501,10 +507,10 @@ class Game:
         self.lines_cleared_so_far += lines_cleared
 
     # extracts the game state from Game
-    def copy(self):
-        _game = Game(self.bag.copy())
+    def copy(self, bag=None):
+        _game = Game(bag)
         _game.player_score = self.player_score
-
+        
         # duplicate current_piece as cp
         cp = self.current_piece
         _game.current_piece = cp.copy()
@@ -516,7 +522,7 @@ class Game:
         _game.next_piece = cp.copy()
         _game.next_piece.coord = np.coord[:]
         _game.next_piece.rotation = np.rotation
-
+        
         _game.block_matrix = [row[:] for row in self.block_matrix]
         
         return _game
