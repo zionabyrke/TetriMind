@@ -5,6 +5,8 @@ import copy
 
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
 T_SPIN = {1:800, 2: 1200, 3: 1600}
+GARBAGE_TABLE_NORMAL = {1: 0, 2: 1, 3: 2, 4: 4}
+GARBAGE_TABLE_TSPIN = {1: 2, 2: 4, 3: 6 }
 BLOCKFALL_RATE = 36 # Blocks fall every 36 frames
 
 #shapeList disctionary
@@ -81,6 +83,7 @@ class Bag:
     # the same sequence of piece without fail (source: trust me bro)
     def __init__(self, seed, rng=None):
         self.bag_arr = []
+        self.seed=seed
         # if rng parameter was given, then we use that one (this if statement is mainly because of self.copy
         if rng:
             self.rng=rng
@@ -111,63 +114,12 @@ class Bag:
     # clears the current bag, replenishes it, and reseeds the random number generator
     # also called at class instantiation to remove redundancy
     def reset(self, seed):
-        self.bag_arr.clear()
         self.rng.seed(seed)
         self._replenish_bag()
 
-
-class Gamestate:
-    def __init__(self, game):
-        self.game = game
-        self.current_piece = self.game.current_piece
-        self.next_piece = self.game.next_piece
-        self.score = self.game.player_score 
-
-        _holes, _bumpiness, _column_heights = self.game.get_field_features()
-        self.holes = _holes
-        self.bumpiness = _bumpiness
-        self.column_heights = _column_heights
-
-        """
-        # new add extraction to get_field_features()
-        self.pileHeight = 0
-        self.connectedHoles = 0
-        self.removedRows = 0
-        self.maxWellDepth = 0
-        self.rowTransitions = 0
-        self.colTransitions = 0
-        self.landingHeight = 0
-        self.wellSum = 0
-        self.altitude = 0
-        self.filledCells = 0
-        """
-
-    # get_field_features()
-    def set_game_states(self, game):
-        # add extractions of remaining game states
-        self.__init__(game) # reset class
-
-        # colHeights find first occupied cell
-        for col in range(COLUMNS):
-            for row in range(ROWS):
-                if self.block_matrix[row][col] != 0:
-                    # first filled row from top found = rows - row_index
-                    self.column_heights[col] = ROWS - row
-                    break
-
-         # holes each cols that have 1 block & under it is 0
-        for c in range(COLUMNS):
-            # count holes under the first filled block (1)
-            block_found = False
-            for r in range(ROWS):
-                if self.block_matrix[r][c]:
-                    block_found = True
-                elif block_found:
-                    self.holes += 1
-
-        self.bumpiness = sum(abs(self.heights[i] - self.heights[i + 1])
-                        for i in range(COLUMNS - 1))
-
+    def _replenish_bag(self):
+        self.bag_arr = list(ShapeList.keys())
+        self.rng.shuffle(self.bag_arr)
 
 class Tetromino:
     def __init__(self, shape_type):
@@ -197,33 +149,47 @@ class Game:
     def __init__(self, bag):
         self.bag = bag
         self.block_matrix = [[0 for _ in range(COLUMNS)] for _ in range(ROWS)]
-        self.current_piece = self.bag.pull()
-        self.next_piece = self.bag.pull()
+        # For optimization, because when copying we don't need to pull from the bag 
+        # So bag is None when copying
+        self.total_pieces = 0
         self.fall_speed = BLOCKFALL_RATE / FRAMEPERSEC
         self.fall_timer = 0
+        if bag:
+            self.next_piece = self.bag.pull()
+            self.generate_tetromino()
+        else:
+            self.next_piece = None
+            self.current_piece = None
 
         #game info
         self.player_score = 0
         self.game_level = 1
         self.elapsed_time = 0
 
-        # flags
+        # flags & counters
         self.lines_cleared = 0
         self.lines_cleared_so_far = 0
+        self.landing_height = 0
+        self.tspins = 0
+        self.tetris = 0
         self.last_action = None
         self.game_over = False
+        self.tspin_now = False
+        self.garbage_queue = 0
 
     def generate_tetromino(self):
+        self.tspin_now = False
         self.current_piece = self.next_piece
         self.next_piece = self.bag.pull()
-        
+        self.total_pieces += 1
+
         # collision on spawn = game over
         if self._check_collision(self.current_piece.coord[0],
                                  self.current_piece.coord[1],
                                  self.current_piece.get_shape_array()):
             self.game_over = True
 
-    def move_tetromino(self, action, color_matrix):
+    def move_tetromino(self, action, color_matrix=None):
         piece = self.current_piece
         if not piece: #if no piece falling
             return
@@ -264,23 +230,48 @@ class Game:
             # Check if we will place block by checking collisions from coords (x,y+1)
             if self._check_collision(_coords[0], _coords[1]+1, self.current_piece.get_shape_array()):
                 self.place_block(_coords, self.current_piece.get_shape_array(), color_matrix)
-                lines_cleared = self.check_line_clears(color_matrix)
-                self.lines_cleared_so_far += lines_cleared
+                self.lines_cleared = self.check_line_clears(color_matrix)
                 self.generate_tetromino()
+                # if piece placement does not reulst in line clears, apply garbage
+                if self.garbage_queue and not self.lines_cleared:
+                    self.apply_garbage(color_matrix)
             else:
                 self.move_tetromino(MOVE_DOWN, color_matrix)
-        
+    
+    def update_clock(self, dt):
+        self.elapsed_time += dt
+
+    def update_level(self):
+        # levels up every 10(game_level) total lines cleared
+        target = 10*self.game_level
+
+        while self.lines_cleared_so_far >=target:
+            self.game_level+=1
+            target = 10*self.game_level
+
+    def update_fallspeed(self):
+        previous_L = self.game_level
+        if self.game_level != previous_L:
+            level = max(previous_L, self.game_level)
+            # https://harddrop.com/wiki/Tetris_Worlds
+            time = (0.8-((level-1) * 0.007))**(level-1)
+            if time <= 0.0: # limit
+                time = 0.000001 #16666fps??? unreachable level
+            self.fall_speed = time/FRAMEPERSEC
+
     def ghost_piece(self):
         x,y = self.current_piece.coord
         shape_array = self.current_piece.get_shape_array()
         x,y = self.depth_collide(x,y)
 
-        # adjust y coord[1] as ghost piece
-        ghostPiece = [] #temp coord list
-        for dx, dy in shape_array:
-            ghostPiece.append((x+dx, y+dy))
+        self.landing_height = y
 
-        return ghostPiece #display on main
+        # adjust y coord[1] as ghost piece
+        ghost = [] #temp coord list
+        for dx, dy in shape_array:
+            ghost.append((x+dx, y+dy))
+
+        return ghost #display on main
     
     def get_field_features(self): #called by agent {Public}
         _holes = 0
@@ -312,6 +303,100 @@ class Game:
             _bumpiness += abs(_column_heights[col] - _column_heights[col + 1])
 
         return _holes, _bumpiness, _column_heights
+
+    # for genetic algorithm use
+    def genetics_grid_features(self):
+        holes = 0
+        bumpiness = 0
+        cumulative_height = 0
+        weighted_height = 0
+        relative_height = 0
+        vertical_hole_clusters = 0
+        max_well_depth = 0
+        sum_wells = 0
+        weighted_filled_cells = 0
+        hole_depth = 0
+        row_hole = 0
+
+        column_heights = [0] * COLUMNS
+        holes_per_col = [0] * COLUMNS
+        row_has_hole = [0] * ROWS
+
+        for col in range(COLUMNS):
+            first_block_row = None
+            current_holes = 0
+            hole_depth_accum = 0
+
+            # cluster = 1 continuous vertical holes in a column
+            # True = found
+            cluster_active = False
+
+            for row in range(ROWS):
+                cell = self.block_matrix[row][col]
+                # if block found first time => record height
+                if cell == 1:
+                    weighted_filled_cells += (ROWS - row)
+
+                    if first_block_row is None:
+                        first_block_row = row
+
+                    # close cluster ONLY if hole-cluster is below stack base
+                    if cluster_active and row > first_block_row:
+                        vertical_hole_clusters += 1
+                        cluster_active = False
+
+                else: # only count holes BELOW first block
+                    if first_block_row is not None:
+                        current_holes += 1
+                        row_has_hole[row] = 1
+                        hole_depth_accum += (ROWS - first_block_row)
+
+                        if not cluster_active:
+                            cluster_active = True
+            # end of column, close cluster if open
+            if cluster_active:
+                vertical_hole_clusters += 1
+
+            # results
+            column_heights[col] = 0 if first_block_row is None else (ROWS - first_block_row)
+            holes_per_col[col] = current_holes
+            holes += current_holes
+            hole_depth += hole_depth_accum
+
+        # heights
+        max_h = max(column_heights)
+        min_h = min(column_heights)
+        relative_height = max_h - min_h
+        cumulative_height = sum(column_heights)
+        weighted_height = sum(h*h for h in column_heights)
+
+        # bumpiness
+        for c in range(COLUMNS - 1):
+            bumpiness += abs(column_heights[c] - column_heights[c+1])
+        # wells
+        for c in range(COLUMNS):
+            left = column_heights[c-1] if c > 0 else 99
+            right = column_heights[c+1] if c < COLUMNS - 1 else 99
+            w = max(0, min(left, right) - column_heights[c])
+            sum_wells += w
+            max_well_depth = max(max_well_depth, w)
+
+        row_hole = sum(row_has_hole)
+
+        return {
+            "holes": holes,
+            "bumpiness": bumpiness,
+            "weighted_height": weighted_height,
+            "cumulative_height": cumulative_height,
+            "relative_height": relative_height,
+            "vertical_hole_clusters": vertical_hole_clusters,
+            "max_well_depth": max_well_depth,
+            "sum_wells": sum_wells,
+            "weighted_filled_cells": weighted_filled_cells,
+            "landing_height": self.landing_height,
+            "hole_depth": hole_depth,
+            "row_hole": row_hole
+        }
 
     def is_tspin(self):
         if not(self.last_action == ROTATE_RIGHT or self.last_action == ROTATE_LEFT) or self.current_piece.shape_type != "T":
@@ -375,7 +460,7 @@ class Game:
     def check_line_clears(self, color_matrix=None):
         # Check for any completed line from the y pos of current piece up to y+4
         line_clears = 0
-        tspin = self.is_tspin()
+        self.tspin_now = self.is_tspin()
         for y in range(self.current_piece.coord[1], self.current_piece.coord[1]+4):
             if y >= ROWS:
                 break
@@ -389,7 +474,8 @@ class Game:
         
         # if we gets some line clears then we immediately update score
         if line_clears:
-            self.update_score(line_clears, tspin)
+            self.update_score(line_clears, self.tspin_now)
+            self.update_level()
         return line_clears
 
     def _hard_drop(self, color_matrix):
@@ -415,15 +501,19 @@ class Game:
 
     def update_score(self, lines_cleared, is_tspin):
         if is_tspin:
+            self.tspins += lines_cleared
             self.player_score += T_SPIN.get(lines_cleared, 0)
         else:
+            if lines_cleared == 4:
+                self.tetris += 1
             self.player_score += LINE_SCORES.get(lines_cleared, 0)
+        self.lines_cleared_so_far += lines_cleared
 
     # extracts the game state from Game
-    def copy(self):
-        _game = Game(self.bag.copy())
+    def copy(self, bag=None):
+        _game = Game(bag)
         _game.player_score = self.player_score
-
+        
         # duplicate current_piece as cp
         cp = self.current_piece
         _game.current_piece = cp.copy()
@@ -435,14 +525,78 @@ class Game:
         _game.next_piece = cp.copy()
         _game.next_piece.coord = np.coord[:]
         _game.next_piece.rotation = np.rotation
-
+        
         _game.block_matrix = [row[:] for row in self.block_matrix]
         
         return _game
 
     def reset(self, seed):
-        self.__init__(self.bag)
+        # Dapat pala irereset yung bag before i call yung init, nabaliktad ko dati kaya di same yung nagpapakita kahit same seed
         self.bag.reset(seed)
+        self.__init__(self.bag)
+
+    def garbage(self, enemy):
+        '''
+        queue garbage for enemy based on player's last line clear/tspin
+        source: https://tetris.wiki/Garbage
+        '''
+        if self.lines_cleared == 0:
+            return
+        # if the player has cleared some lines and they have incoming garbage queue
+        # reduce the garbage queue and send the leftovers to the enemy
+        if self.garbage_queue:
+            self.garbage_queue -= self.lines_cleared
+            if self.garbage_queue < 0:
+                enemy.garbage_queue += (-self.garbage_queue)
+                self.garbage_queue = 0
+            self.lines_cleared = 0
+            return
+
+        # garbage lines
+        if self.tspin_now:
+            garbage_lines = GARBAGE_TABLE_TSPIN.get(self.lines_cleared, 0)
+        else:
+            garbage_lines = GARBAGE_TABLE_NORMAL.get(self.lines_cleared, 0)
+        # B2B bonus
+        #if self.tspin_now or self.lines_cleared == 4:
+        #    if self.tspin_now:
+        #        garbage_lines += 1
+        #    else:
+        #        garbage_lines += 2
+        # combo bonus
+        #if self.lines_cleared > 1:
+        #    garbage_lines += self.lines_cleared - 1
+        # perfect clear bonus
+        """if all(all(cell != 0 for cell in row) for row in self.block_matrix):
+            garbage_lines += 3"""
+
+        # queue garbage for enemy
+        #garbage_lines = max(1, min(garbage_lines, 3))
+        enemy.garbage_queue += garbage_lines
+        self.lines_cleared = 0
+
+    def apply_garbage(self, color_matrix):
+        #lines_to_add = max(1, min(self.garbage_queue, 3))
+        lines_to_add = self.garbage_queue
+        # remove top rows
+        for _ in range(lines_to_add):
+            self.block_matrix.pop(0)
+            color_matrix.pop(0)
+
+        # append garbage rows at bottom
+        # hole should be the same for all rows to add
+        hole = random.randint(0, COLUMNS - 1)
+        for _ in range(lines_to_add):
+            row = [1] * COLUMNS
+            row[hole] = 0
+            color_row = ["#FFFFFF00"] * COLUMNS
+            color_row[hole] = "#00000000"
+
+            self.block_matrix.append(row)
+            color_matrix.append(color_row)
+
+        self.garbage_queue = 0
+
 
 # to add:
 # save_game()

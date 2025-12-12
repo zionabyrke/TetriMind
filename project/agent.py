@@ -1,21 +1,82 @@
-from game import Game, Gamestate
+from game import Game
 from settings import *
 
 class Agent:
     def __init__(self, game):
         self.game = game
-        self.current_state = None
-        self.possible_states = []
         # move per sec is based on 60 frame per sec
-        self.move_per_sec = 2/60 # lower = faster
+        self.move_per_sec = 0/60 # lower = faster
+
+        self.move_time=0
+        self.action_sequence=0
+        self.action=None
 
     def get_game_states(self):
-        self.current_state = Gamestate(self.game)
-        self.possible_states = [self.current_state]
+        return self.game.get_field_features()
 
-        # test
-        state = self.current_state
-        return state.holes, state.bumpiness, state.column_heights
+    def moves(self, game, agent, dt, color_matrix):
+        # agent passed is not Agent() so no self calling
+        # agent passed is GeneticAlgorithm() class
+        if self.action:
+            # do self.action in order
+            if(self.move_time <= agent.move_per_sec):
+                self.move_time += dt/1000
+            else:
+                # resets the move time
+                self.move_time = 0
+                # first action sequence - rotates tetromino to initial rotation
+                if self.action_sequence==0:
+                    for rot in range(0 + self.action[0]):
+                        game.move_tetromino(ROTATE_RIGHT, color_matrix)
+                    self.action_sequence += 1
+                # second action sequence - moves tetromino to drop x coordinate move by move, not instant
+                elif self.action_sequence==1:
+                    target_x = self.action[1]
+                    current_x = game.current_piece.coord[0]
+                    dx = target_x - current_x
+                    if dx < 0:
+                        game.move_tetromino(MOVE_LEFT, color_matrix)
+                        # ### FIX: do NOT modify dx manually, let game update coord
+                    elif dx > 0:
+                        game.move_tetromino(MOVE_RIGHT, color_matrix)
+                        # ### FIX: same, do not modify dx here
+                    # ### FIX: refresh coord to see if we reached target X
+                    if game.current_piece.coord[0] == target_x:
+                        self.action_sequence += 1
+                # third action sequence - soft drop the tetromino
+                elif self.action_sequence==2:
+                    game.soft_drop()
+                    self.action_sequence+=1
+                # fourth action sequence - if we have a t-spin, then we rotate the tetromino when it's in the bottom
+                elif self.action_sequence==3:
+                    game.move_tetromino(self.action[2], color_matrix)
+                    self.action_sequence+=1
+                # finally we let the game place the block, then we clear action tuple and reset sequence
+                elif self.action_sequence==4:
+                    game.update(game.fall_speed*1000+1, color_matrix)
+                    self.action=None
+                    self.action_sequence=0
+        else:
+            self.action = agent.choose_action(game)
+
+    def moves_instant(self, game, agent, dt, color_matrix):
+        if(self.move_time < agent.move_per_sec):
+            self.move_time += dt/1000
+        else:
+            self.move_time = 0
+            self.action = agent.choose_action(game)
+            for rot in range(self.action[0]):
+                game.move_tetromino(ROTATE_RIGHT, color_matrix)
+            dx = self.action[1] - game.current_piece.coord[0]
+            for move in range(abs(dx)):
+                if dx < 0:
+                    game.move_tetromino(MOVE_LEFT, color_matrix)
+                else:
+                    game.move_tetromino(MOVE_RIGHT, color_matrix)
+            game.soft_drop()
+            game.move_tetromino(self.action[2], color_matrix)
+            game.update(game.fall_speed*1000+1, color_matrix)
+
 
     def get_next_states(self, game):
         game_copy = game.copy()
@@ -37,30 +98,37 @@ class Agent:
             rightmost_x = max(shape, key = lambda coords:coords[0])[0]
 
             # try from middle spawn to left & rightmost game
-            for dx in range(0-leftmost_x, COLUMNS-rightmost_x): 
+            for x in range(0-leftmost_x, COLUMNS-rightmost_x): 
                 # hard drop to final landing position + line clears
-                piece.coord[0], piece.coord[1] = game_copy.depth_collide(dx, 0)
+                dx = x - ((COLUMNS//2)-2)
 
                 # add action state pair
                 # actions are of the form (initial rotation, distance from spawn x coordinate, rotation at the bottom for t spin)
                 this_state = game_copy.copy()
+                for move in range(abs(dx)):
+                    if dx < 0:
+                        this_state.move_tetromino(MOVE_LEFT)
+                    else:
+                        this_state.move_tetromino(MOVE_RIGHT)
 
-                # try t spin rotates
-                if piece.shape_type == "T":
-                    test_left = self.test_tspin(this_state, ROTATE_LEFT)
-                    if test_left:
-                        test_left.place_block(test_left.current_piece.coord, test_left.current_piece.get_shape_array())
-                        next_states[(piece.rotation, dx, ROTATE_LEFT)] = test_left
+                # CHECK if current x coordinate is reachable via moves rights or lefts
+                if this_state.current_piece.coord[0] == x:
+                    this_state.soft_drop()
+                    # try t spin rotates
+                    if piece.shape_type == "T":
+                        test_left = self.test_tspin(this_state, ROTATE_LEFT)
+                        if test_left:
+                            test_left.place_block(test_left.current_piece.coord, test_left.current_piece.get_shape_array())
+                            next_states[(piece.rotation, x, ROTATE_LEFT)] = test_left
 
-                    test_right = self.test_tspin(this_state, ROTATE_RIGHT)
-                    if test_right:
-                        test_right.place_block(test_right.current_piece.coord, test_right.current_piece.get_shape_array())
-                        next_states[(piece.rotation, dx, ROTATE_RIGHT)] = test_right
+                        test_right = self.test_tspin(this_state, ROTATE_RIGHT)
+                        if test_right:
+                            test_right.place_block(test_right.current_piece.coord, test_right.current_piece.get_shape_array())
+                            next_states[(piece.rotation, x, ROTATE_RIGHT)] = test_right
 
-                #hard dropped
-                this_state.place_block((piece.coord[0], piece.coord[1]), shape)
-                next_states[(piece.rotation, dx, 0)] = this_state
-
+                    #hard dropped
+                    this_state.place_block(this_state.current_piece.coord, shape)
+                    next_states[(piece.rotation, x, 0)] = this_state
 
         return next_states
 
@@ -108,5 +176,3 @@ class Agent:
         )
 
         return reward
-
-  
