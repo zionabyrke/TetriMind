@@ -4,9 +4,10 @@ from game import Game, Bag
 from menu import show_menu
 from settings import *
 import time
+import random
 
 # player components
-seed = 1
+seed = random.randint(0, 2**63-1)
 bag = Bag(seed)
 game = Game(bag)
 

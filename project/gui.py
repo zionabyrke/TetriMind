@@ -67,7 +67,7 @@ class RendererSolo:
 
             ### GAME LOGIC SECTION
             if self.is_reset or game.game_over:
-                game.reset(game.bag.seed)
+                game.reset(random.randint(0, 2**63-1))
                 self.__init__(self.screen)
             if not self.paused: #update only if not paused
                 game.update(dt, self.color_matrix)
@@ -108,7 +108,7 @@ class RendererSolo:
                 # Move variables are mapped to their corresponding pygame.key in settings.py
                 # So this will move tetromino based on pressed key
                 game.move_tetromino(event.key, self.color_matrix)
-            elif event.type == pygame.KEYUP:
+            elif event.type == pygame.KEYUP and self.held_keys:
                 self.hold_delay = 0
                 if event.key == pygame.K_LEFT:
                     self.held_keys.remove(MOVE_LEFT)
@@ -259,8 +259,9 @@ class RendererVs(RendererSolo):
 
             ### GAME LOGIC SECTION
             if self.is_reset or game_p.game_over or game_ai.game_over:
-                game_p.reset(game_p.bag.seed)
-                game_ai.reset(game_ai.bag.seed)
+                new_seed = random.randint(0, 2**63-1)
+                game_p.reset(new_seed)
+                game_ai.reset(new_seed)
                 agent.move_time=0
                 agent.action_sequence=0
                 agent.action=None
@@ -285,14 +286,6 @@ class RendererVs(RendererSolo):
         if garbo:
             game_h.garbage(game_ai)
             game_ai.garbage(game_h)
-            
-            if game_h.garbage_queue:
-                game_h.apply_garbage(self.color_matrix)
-            elif game_ai.garbage_queue:
-                game_ai.apply_garbage(self.color_matrix_ai)
-
-            game_h.garbage_queue = 0
-            game_ai.garbage_queue = 0
 
         game_h.update(dt, self.color_matrix)
         game_ai.update(dt, self.color_matrix_ai)

@@ -232,6 +232,9 @@ class Game:
                 self.place_block(_coords, self.current_piece.get_shape_array(), color_matrix)
                 self.lines_cleared = self.check_line_clears(color_matrix)
                 self.generate_tetromino()
+                # if piece placement does not reulst in line clears, apply garbage
+                if self.garbage_queue and not self.lines_cleared:
+                    self.apply_garbage(color_matrix)
             else:
                 self.move_tetromino(MOVE_DOWN, color_matrix)
     
@@ -539,40 +542,51 @@ class Game:
         '''
         if self.lines_cleared == 0:
             return
+        # if the player has cleared some lines and they have incoming garbage queue
+        # reduce the garbage queue and send the leftovers to the enemy
+        if self.garbage_queue:
+            self.garbage_queue -= self.lines_cleared
+            if self.garbage_queue < 0:
+                enemy.garbage_queue += (-self.garbage_queue)
+                self.garbage_queue = 0
+            self.lines_cleared = 0
+            return
+
         # garbage lines
         if self.tspin_now:
             garbage_lines = GARBAGE_TABLE_TSPIN.get(self.lines_cleared, 0)
         else:
             garbage_lines = GARBAGE_TABLE_NORMAL.get(self.lines_cleared, 0)
         # B2B bonus
-        if self.tspin_now or self.lines_cleared == 4:
-            if self.tspin_now:
-                garbage_lines += 1
-            else:
-                garbage_lines += 2
+        #if self.tspin_now or self.lines_cleared == 4:
+        #    if self.tspin_now:
+        #        garbage_lines += 1
+        #    else:
+        #        garbage_lines += 2
         # combo bonus
-        if self.lines_cleared > 1:
-            garbage_lines += self.lines_cleared - 1
+        #if self.lines_cleared > 1:
+        #    garbage_lines += self.lines_cleared - 1
         # perfect clear bonus
         """if all(all(cell != 0 for cell in row) for row in self.block_matrix):
             garbage_lines += 3"""
 
         # queue garbage for enemy
-        garbage_lines = max(1, min(garbage_lines, 3))
+        #garbage_lines = max(1, min(garbage_lines, 3))
         enemy.garbage_queue += garbage_lines
         self.lines_cleared = 0
 
     def apply_garbage(self, color_matrix):
-        lines_to_add = max(1, min(self.garbage_queue, 3))
-
+        #lines_to_add = max(1, min(self.garbage_queue, 3))
+        lines_to_add = self.garbage_queue
         # remove top rows
         for _ in range(lines_to_add):
             self.block_matrix.pop(0)
             color_matrix.pop(0)
 
         # append garbage rows at bottom
+        # hole should be the same for all rows to add
+        hole = random.randint(0, COLUMNS - 1)
         for _ in range(lines_to_add):
-            hole = random.randint(0, COLUMNS - 1)
             row = [1] * COLUMNS
             row[hole] = 0
             color_row = ["#FFFFFF00"] * COLUMNS
