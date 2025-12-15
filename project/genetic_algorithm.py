@@ -1,13 +1,11 @@
 from agent import Agent
 import random
-import copy
 import json
 import os
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use("Agg") # non-GUI
 """
-    TRACK: PIECES SURVIVED, LINES CLEARED
     Genome means player
     Gene means set of weights
     population size min 60, avg 80, >120 max potential
@@ -17,7 +15,7 @@ matplotlib.use("Agg") # non-GUI
 
 class GeneticAlgorithm(Agent):
     def __init__(self, game, play=False,
-            population_size=120,
+            population_size=60,
             mutation_rate=0.05, 
             mutation_step=0.2
     ):
@@ -41,7 +39,20 @@ class GeneticAlgorithm(Agent):
         self.gene_len = len(self.gene_labels)
 
         if self.play:
-            self.model = list(self.load_best())
+            #self.model = list(self.load_best())
+            self.model = [ -0.2372880556647623,
+                            -0.4438840045053737,
+                            -0.16472179906233808,
+                            -0.36610286896574895,
+                            0.027076110600339653,
+                            -0.43783840340069546,
+                            -0.20986718144358274,
+                            -0.2679573547547346,
+                            0.20969625539340975,
+                            0.0963996802363466,
+                            -0.049199045419423326,
+                            -0.05855664203821431
+            ]
         else:
             # ga hyperparameters
             self.population_size = population_size
@@ -50,10 +61,11 @@ class GeneticAlgorithm(Agent):
             self.population = self.init_population()
 
             # fitness aligned with population indexes
-            self.fitness = [0.0 for _ in range(self.population_size)]
+            self.fitness = [0 for _ in range(self.population_size)]
             self.current_index = 0
             self.generation = 0
             self.fitness_history = []    
+            self.game_count = 0
         
     """
         initializes N number of players
@@ -69,8 +81,6 @@ class GeneticAlgorithm(Agent):
 
     # overwritten method by inheritance:
     def _evaluate_state(self, eval_game):
-        lines_cleared = eval_game.check_line_clears()
-
         value = self.feature_func(eval_game)
         return value
 
@@ -81,7 +91,6 @@ class GeneticAlgorithm(Agent):
 
         # evaluate value for the action
         for action in next_states:
-            # looking for max value (min penalty) out of each state
             state_eval = self._evaluate_state(next_states[action])
             if state_eval > best_value:
                 best_value = state_eval
@@ -105,7 +114,7 @@ class GeneticAlgorithm(Agent):
 
     # GA methods
     """
-    records a genome's fitness (episode score) for the current genome index
+    records a genome's fitness (linear reward) for the current genome index
     when all genomes in the population are evaluated, calls evolve()
     """
     def tournament(self, reward):
@@ -113,6 +122,7 @@ class GeneticAlgorithm(Agent):
         self.fitness[self.current_index] = reward
         if reward > top:
             self.save_best()
+        self.save_progress()
         self.current_index += 1
 
         # full generation evaluated?
@@ -126,8 +136,7 @@ class GeneticAlgorithm(Agent):
     this favors higher-ranked genomes but keeps randomness
     """
     def random_parent(self, survivors):
-        M = len(survivors)
-        idx = int((random.random() ** 2) * (M - 1))
+        idx = int((random.random() ** 2) * (len(survivors) - 1))
         return survivors[idx]
 
     """
@@ -192,32 +201,31 @@ class GeneticAlgorithm(Agent):
         print(f"[GEN {self.generation}] best={best:.2f} avg={avg:.2f}")
         self.plot_fitness()
 
-        self.fitness = [0.0 for _ in range(self.population_size)]
+        self.fitness = [0 for _ in range(self.population_size)]
         self.generation += 1
 
     """
     makes sure training not be interrupted
     """
-    def save_progress(self, filename="gene_batch.json"):
+    def save_progress(self, path="project/data/gene_batch.json"):
         data = {
             "seed": self.game.bag.seed,
             "generation": self.generation,
-            "current_index": self.current_index - 1,
+            "current_index": self.current_index,
             "population_size": self.population_size,
             "population": self.population,
             "fitness": self.fitness,
-            "fitness_history": self.fitness_history,
+            "fitness_history": self.fitness_history
         }
-        with open(filename, "w") as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=4)
-        print(f"batch saved to {filename}")
+        #print(f"batch saved to {path}")
 
-    def load_progress(self, filename="gene_batch.json"):
-        # load genome batch from file
-        if not os.path.exists(filename):
+    def load_progress(self, path="project/data/gene_batch.json"):
+        if not os.path.exists(path):
             print("no save file")
             return None
-        with open(filename, "r") as f:
+        with open(path, "r") as f:
             data = json.load(f)
         self.game.bag.seed = data["seed"]
         self.generation = data["generation"]
@@ -226,9 +234,9 @@ class GeneticAlgorithm(Agent):
         self.population = data["population"]
         self.fitness = data["fitness"]
         self.fitness_history = data["fitness_history"]
-        print(f"batch loaded from {filename}")
+        print(f"batch loaded from {path}")
 
-    def save_best(self, filename="best_genome_v0.json"):
+    def save_best(self, path="project/data/best_genome_curr_gen.json"):
         # index of winner
         winner = max(range(self.population_size), key=lambda i: self.fitness[i])
         data = {
@@ -237,27 +245,24 @@ class GeneticAlgorithm(Agent):
             "weights": dict(zip(self.gene_labels, self.population[winner])),
             "fitness": self.fitness[winner],
         }
-        with open(filename, "w") as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=4)
-        print(f"saved best to {filename}")
+        print(f"saved best to {path}")
 
-    def load_best(self, filename="best_genome_v0.json"):
-        if not os.path.exists(filename):
+    def load_best(self, path="project/data/best_genome_curr_gen.json"):
+        if not os.path.exists(path):
             print("no save file")
             return None
-        with open(filename, "r") as f:
+        with open(path, "r") as f:
             data = json.load(f)
         self.generation = data["generation"]
         self.current_index = data["index"]
 
         return data["weights"].values()
 
-
-    
     """
     training metrics
     """
-
     
     def plot_fitness(self, filename="fitness_plot.png"):
         if not self.fitness_history:

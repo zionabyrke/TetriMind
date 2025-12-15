@@ -590,7 +590,7 @@ class Game:
             row = [1] * COLUMNS
             row[hole] = 0
             color_row = ["#FFFFFF00"] * COLUMNS
-            color_row[hole] = "#00000000"
+            color_row[hole] = BLACK
 
             self.block_matrix.append(row)
             color_matrix.append(color_row)
@@ -601,4 +601,3 @@ class Game:
 # to add:
 # save_game()
 # load_game()
-# update the game level
