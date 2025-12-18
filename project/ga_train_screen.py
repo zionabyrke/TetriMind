@@ -18,7 +18,12 @@ pygame.display.set_caption("Training Arc")
 '''
 #objects
 seed =  random.randint(0, 2**63-1)
+
+#Hardmode Bag
+#bag = Bag(seed, is_hardmode=True)
+#Default Bag
 bag = Bag(seed)
+
 game = Game(bag)
 agent = GeneticAlgorithm(game)
 agent.load_progress()
