@@ -3,55 +3,42 @@ from genetic_algorithm import GeneticAlgorithm
 from game import Game, Bag
 from menu import show_menu
 from settings import *
-import time
-import random
-
-# player components
-seed = random.randint(0, 2**63-1)
-bag = Bag(seed)
-game = Game(bag)
-
-# agent components
-bag_ai = Bag(seed)
-game_ai = Game(bag_ai)
-agent = GeneticAlgorithm(game_ai,play=True)
 
 if __name__ == "__main__":
     running = True
     while running:
-        # default screen = menu
         GAME_MODE, AI_DIFFICULTY, screen = show_menu()
         renderer = RendererSolo(screen)
         renderer_vs = RendererVs(screen)
+        seed = random.randint(0, 2**63-1)
+        # renderers return False to EXIT, True if go Menu
 
-        time.sleep(0.1)
         if GAME_MODE == "player":
-            if not renderer.run(game):
-                running = False
+            bag = Bag(seed)
+            solo_game = Game(bag)
+            running = renderer.run(solo_game) ## start game ## 
 
         elif GAME_MODE == "ai":
-            seed += 1 # changes every menu button click
-            game.reset(seed)
-            game_ai.reset(seed)
-            agent.game = game_ai
+            bag_p = Bag(seed)
+            bag_ai = Bag(seed)
+            game_p = Game(bag_p)
+            game_ai = Game(bag_ai)
+            agent = GeneticAlgorithm(game_ai,play=True)
 
             if AI_DIFFICULTY == "low":
                 agent.move_per_sec = 20/60 # easy
-                if not renderer_vs.run(game, game_ai, agent):
-                    running = False
+                running = renderer_vs.run(game_p, game_ai, agent)
                     
             elif AI_DIFFICULTY == "medium":
                 agent.move_per_sec = 10/60
-                if not renderer_vs.run(game, game_ai, agent):
-                    running = False
+                running = renderer_vs.run(game_p, game_ai, agent)
 
             elif AI_DIFFICULTY == "hard":
                 agent.move_per_sec = 10/60 # medium speed but with garbo
-                if not renderer_vs.run(game, game_ai, agent, garbo=True):
-                    running = False
+                running = renderer_vs.run(game_p, game_ai, agent, garbo=True)
 
             elif AI_DIFFICULTY == "expert":
-                agent.move_per_sec = 2/60 # high speed clanker sheesh
-                if not renderer_vs.run(game, game_ai, agent, garbo=True):
-                    running = False
+                agent.move_per_sec = 2/60 
+                running = renderer_vs.run(game_p, game_ai, agent, garbo=True)
+
     pygame.quit()

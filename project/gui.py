@@ -1,7 +1,4 @@
 from settings import *
-import time
-import random
-
 pygame.init()
 
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)

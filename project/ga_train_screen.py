@@ -4,7 +4,6 @@ from train_screen import *
 from genetic_algorithm import GeneticAlgorithm
 from game import Game, Bag
 from agent import Agent
-import random
 
 pygame.init()
 screen = pygame.display.set_mode((GAME_WIDTH+RIGHTBAR_WIDTH+PADDING*3, GAME_HEIGHT+APPNAME_SIZE+PADDING*2))
@@ -18,10 +17,15 @@ pygame.display.set_caption("Training Arc")
 '''
 #objects
 seed =  random.randint(0, 2**63-1)
-bag = Bag(seed)
+
+#Hardmode Bag
+bag = Bag(seed, is_hardmode=True)
+#Default Bag
+#bag = Bag(seed)
 game = Game(bag)
 agent = GeneticAlgorithm(game)
 agent.load_progress()
+#agent.plot_fitness()
 
 class GATrainer(Trainer):
     def __init__(self, screen):
@@ -43,13 +47,12 @@ class GATrainer(Trainer):
             game.update_clock(dt)
             
             if game.game_over:
-
                 #### GA acts here
                 agent.tournament(self.reward)
 
-                if agent.current_index == 0:
+                '''if agent.current_index == 0:
                     game.bag.seed = random.randint(0, 2**63-1)
-                    print(f"new seed: {game.bag.seed}")
+                    print(f"new seed: {game.bag.seed}")'''
 
                 #resets
                 game.reset(game.bag.seed)
