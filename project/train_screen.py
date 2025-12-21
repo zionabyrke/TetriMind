@@ -3,6 +3,7 @@ from settings import *
 from gui import *
 from game import Game, Bag, Tetromino
 from agent import Agent
+from dqn import DQNAgent
 
 testing_seed = 5
 
@@ -13,7 +14,7 @@ pygame.display.set_caption("Training Arc")
 #objects
 bag = Bag(testing_seed)
 game = Game(bag)
-agent = Agent(game)
+agent = DQNAgent(game)
 
 ### TESTING ###
 # T spin check
@@ -63,10 +64,6 @@ class Trainer(RendererSolo):
             # Removed pygame clock tick delay of framespersec to get faster training
             dt = self.clock.tick(FRAMEPERSEC)
 
-            if game.game_over:
-                print("Game Over")
-                exit()
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -76,6 +73,21 @@ class Trainer(RendererSolo):
 
             ######   agent actions HERE
             agent.moves_instant(game, agent, dt, self.color_matrix)
+
+            reward = game.total_pieces + game.lines_cleared  # linear reward
+            done = game.game_over
+
+            # store state transition (terminal or not)
+            agent.store_transition(
+                next_state=game.copy(),
+                reward=reward,
+                done=done
+            )
+            agent.learn()
+
+            if done:
+                game.reset(seed)
+                self.__init__(self.screen)
             
             self.display_section(game)
             self.panels(game, agent)
