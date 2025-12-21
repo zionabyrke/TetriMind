@@ -82,7 +82,7 @@ class Bag:
     def __init__(self, seed, rng=None, is_hardmode=False):
         self.bag_arr = []
         self.seed=seed
-        self.is_hardmode=is_hardmode
+        self.hardmode=is_hardmode
         # if rng parameter was given, then we use that one (this if statement is mainly because of self.copy
         if rng:
             self.rng=rng
@@ -96,14 +96,14 @@ class Bag:
 
     # grab a piece from own bag
     def pull(self):
-        if self.is_hardmode:
-            piece = self.rng.choices(shape_list_arr, 
-            [3/11, 3/11, 1/11, 1/11, 1/11, 1/11, 1/11])
+        if self.hardmode:
+            piece = self.rng.choices(shape_list_arr, [3/11, 3/11, 1/11, 1/11, 1/11, 1/11, 1/11])
             return Tetromino(piece[0])
-        else:   
+        else:
             if not self.bag_arr:
                 self._replenish_bag()
             return Tetromino(self.bag_arr.pop())
+
 
     #grab future piece without pulling from bag
     def peek(self):
