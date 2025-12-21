@@ -1,7 +1,4 @@
 from settings import *
-import time
-import random
-
 pygame.init()
 
 font_title = pygame.font.SysFont("consolas", APPNAME_SIZE)
@@ -142,7 +139,7 @@ class RendererSolo:
         self.panels(game)
         self.buttons()
 
-    def playfield(self, game, surface, prev, color_matrix, human=True):
+    def playfield(self, game, surface, prev, color_matrix):
         surface.fill(BLACK) 
 
         # playfield blocks
@@ -165,13 +162,12 @@ class RendererSolo:
                                 CELL_SIZE, CELL_SIZE))
 
             # ghost piece
-            if human:
-                ghost_coords = game.ghost_piece()
-                ghost_color = pygame.Color(game.current_piece.color)
-                ghost_color.a = 64 #25% x 255 = 64 adjust
-                ghost_surface.fill(ghost_color)
-                for gx, gy in ghost_coords:
-                    surface.blit(ghost_surface, (gx*CELL_SIZE, gy*CELL_SIZE))
+            ghost_coords = game.ghost_piece()
+            ghost_color = pygame.Color(game.current_piece.color)
+            ghost_color.a = 64 #25% x 255 = 64 adjust
+            ghost_surface.fill(ghost_color)
+            for gx, gy in ghost_coords:
+                surface.blit(ghost_surface, (gx*CELL_SIZE, gy*CELL_SIZE))
 
         # next tetromino piece
         if game.next_piece:
@@ -309,7 +305,7 @@ class RendererVs(RendererSolo):
         self.screen.blit(title_text, ((WINDOW_WIDTH_vs - title_text.get_width()) // 2, PADDING))
 
         self.playfield(game_h, playfield_surface, preview_surface, self.color_matrix)
-        self.playfield(game_ai, playfield_surface_ai, preview_surface_ai, self.color_matrix_ai, human=False)
+        self.playfield(game_ai, playfield_surface_ai, preview_surface_ai, self.color_matrix_ai)
         self.panels(game_h, game_ai)
         self.buttons()
 

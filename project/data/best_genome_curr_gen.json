@@ -1,0 +1,19 @@
+{
+    "generation": 16,
+    "index": 25,
+    "weights": {
+        "holes": -0.2638578844150894,
+        "bumpiness": -0.2153382925237446,
+        "weighted_height": -0.05462047555844693,
+        "cumulative_height": -0.38913115662719766,
+        "relative_height": 0.4453283938242215,
+        "vertical_hole_clusters": -0.33728202498648757,
+        "max_well_depth": 0.1117112800306197,
+        "sum_wells": -0.4213845809791847,
+        "weighted_filled_cells": -0.19823716448997986,
+        "landing_height": -0.2672871544696101,
+        "hole_depth": -0.1431798397747871,
+        "row_hole": -0.13491870660337146
+    },
+    "fitness": 3712749
+}

@@ -1,4 +1,6 @@
 import pygame
+import random
+import time
 
 # movements
 MOVE_RIGHT   = pygame.K_RIGHT

@@ -4,11 +4,6 @@ from train_screen import *
 from genetic_algorithm import GeneticAlgorithm
 from game import Game, Bag
 from agent import Agent
-import random
-
-"""
-    BUG: WRONG CURRENT INDEX SAVED ON BATCH
-"""
 
 pygame.init()
 screen = pygame.display.set_mode((GAME_WIDTH+RIGHTBAR_WIDTH+PADDING*3, GAME_HEIGHT+APPNAME_SIZE+PADDING*2))
@@ -21,23 +16,28 @@ pygame.display.set_caption("Training Arc")
     PRIOR TO CLOSING THE APP
 '''
 #objects
-seed = random.randint(0, 2**63-1)
-bag = Bag(seed)
+seed =  random.randint(0, 2**63-1)
+
+#Hardmode Bag
+bag = Bag(seed, is_hardmode=True)
+#Default Bag
+#bag = Bag(seed)
 game = Game(bag)
 agent = GeneticAlgorithm(game)
 agent.load_progress()
+#agent.plot_fitness()
 
 class GATrainer(Trainer):
     def __init__(self, screen):
         super().__init__(screen)
         self.reward = 0
     
-    def run(self, seed, game, agent):
-        game_count = 0
+    def run(self, game, agent):
+        agent.game_count = (agent.generation*agent.population_size)+agent.current_index
         while self.running:
             # Removed pygame clock tick delay of framespersec to get faster training
             dt = self.clock.tick()
-
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -47,33 +47,35 @@ class GATrainer(Trainer):
             game.update_clock(dt)
             
             if game.game_over:
-                # randomize seed when all genomes finished
-                if agent.current_index == agent.population_size - 1:
-                    seed = random.randint(0, 2**63-1)
-
                 #### GA acts here
                 agent.tournament(self.reward)
 
+                '''if agent.current_index == 0:
+                    game.bag.seed = random.randint(0, 2**63-1)
+                    print(f"new seed: {game.bag.seed}")'''
+
                 #resets
-                game.reset(seed)
+                game.reset(game.bag.seed)
+                agent.game = game
+
                 agent.move_time=0
                 agent.action_sequence=0
                 agent.action=None
                 self.__init__(self.screen)
 
-                game_count += 1
+                agent.game_count += 1
 
             # rewarded only if not game over
+            # chen's linear reward
             self.reward += 1 + game.lines_cleared
 
             #agent moves are instant during training but should be sequential for versus
             agent.moves_instant(game, agent, dt, self.color_matrix)
 
             self.display_section(game)
-            self.panels(game, agent, game_count)
+            self.panels(game, agent, agent.game_count)
             pygame.display.update()
 
-        agent.save_progress()
         pygame.quit()
 
     def panels(self, game, agent, game_count):
@@ -105,5 +107,5 @@ gui = GATrainer(screen)
 
 if __name__ == "__main__":
     # run here
-    gui.run(seed, game, agent)
+    gui.run(agent.game, agent)
     

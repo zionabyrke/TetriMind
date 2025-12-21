@@ -1,55 +1,52 @@
 # TetriMind
 A Tetris Game with Reinforcement Learning AI Agent
 
-# 🧩 For Project Collaborators
-<br>
-
-## ⚙️ Setup
+## Setup
 - Clone the repository and install dependencies from `requirements.txt`
 
       pip install -r requirements.txt
 
 - Open the folder in Visual Studio Code and run:
 
-      python project/main.py
+      python3 project/main.py
 
 <br>
 
-## 🌿 Collaboration Reminders
-- **Never commit directly to `main`.**
-- Always **create a new branch** before making any changes.
-- **Pull** the latest `main` branch before starting work.
-- **Push** your branch and open a **pull request (PR)** for review.
-- Wait for teammates to **review and approve** before merging.
-- **Delete merged branches** after approval to keep the repo clean.
-
-<br>
-
-## 🏷️ Branch Naming
-| Type | Example | Use |
-|------|----------|-----|
-| feature | feature/add-scoreboard | For new features |
-| bugfix | bugfix/fix-rotation | For bug fixes |
-| hotfix | hotfix/startup-error | For urgent fixes |
-
-<br>
-
-## 🔁 Quick Reminder
-Stay consistent with the team workflow.  
-Communicate before merging.  
-Keep branches short-lived and well-named.  
-Test before committing.  
-Keep `main` stable at all times.
-
-<br>
-
-# 🎮 Overview
-TetriMind is a Python-based Tetris project that integrates an AI Agent trained via reinforcement learning to autonomously play the game. Players can enjoy traditional gameplay or challenge the AI in Player vs AI Mode.
-
-# ✨ Features
-- Classic Tetris gameplay with responsive controls
+## Features
+- Classic Tetris with responsive controls
 - Player vs AI mode with difficulty levels
+- Realistic AI moves
+- Versus AI garbage lines
+- T-spins
+- Retrainable Tetris Agent (Genetic Algorithm)
 
-# ⚙️ Tech Stack
+# Results
+## Genetic Algorithm
+- Mutation rate: 0.05
+- Mutation step: 0.2
+- Reward/Fitness: pieces survived + lines cleared
+- Feature function: holes, bumpiness, weighted height, cumulative height, relative height, vertical hole tunnels, max well depth, sum wells, weighted filled cells, landing height, hole depth, row hole
+
+## GA Version 1.0
+- Generations: 17
+- Population: 60
+- Games: 1,020 gameovers
+- Standard 7-Bag w/ changing seeds per generation
+![GA v1 Fitness Curve](project/data/fitness_plot.png)
+
+## GA Version 2.0
+- Generations: 24
+- Population: 240 (4x bigger sample)
+- Games: 5,760 gameovers
+- 11-Bag: 7Bag but 3x more S & Z hard mode pieces
+- Changing seeds
+![GA v2 Fitness Curve](project/data/fitness_plot_v2.png)
+
+## Tech Stack
 Language: Python
-<br>Library: Pygame
+<br>Main Library: pygame
+<br>Optional Library: pyinstaller (exe bundling), matplotlib (training)
+
+# Useful Links:
+- [Reinforcement Learning on Tetris](https://rex-l.medium.com/reinforcement-learning-on-tetris-707f75716c37)
+- [Evolving Tetris AI based on genetic algorithms](https://github.com/mzmousa/tetris-ai?tab=readme-ov-file)

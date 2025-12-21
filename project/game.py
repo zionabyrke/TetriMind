@@ -1,5 +1,4 @@
 from settings import *
-import random
 import datetime
 import copy
 
@@ -76,14 +75,14 @@ I_wall_kick_dict = {(0, 1): I_type_1, (1, 0): I_type_2, (1, 2): I_type_3, (2, 1)
 
 
 # new usage: both human and agent gets their own bag
-# binago ko kasi yung last impementation masyado nakakalito basahin
-# at gumagamit ng global (na hindi constant) which is no-no
+shape_list_arr = ["S", "Z", "J", "L", "T", "O", "I"]
 class Bag:
     # just give the players the same generated seed and it will give them
     # the same sequence of piece without fail (source: trust me bro)
-    def __init__(self, seed, rng=None):
+    def __init__(self, seed, rng=None, is_hardmode=False):
         self.bag_arr = []
         self.seed=seed
+        self.hardmode=is_hardmode
         # if rng parameter was given, then we use that one (this if statement is mainly because of self.copy
         if rng:
             self.rng=rng
@@ -97,9 +96,14 @@ class Bag:
 
     # grab a piece from own bag
     def pull(self):
-        if not self.bag_arr:
-            self._replenish_bag()
-        return Tetromino(self.bag_arr.pop())
+        if self.hardmode:
+            piece = self.rng.choices(shape_list_arr, [3/11, 3/11, 1/11, 1/11, 1/11, 1/11, 1/11])
+            return Tetromino(piece[0])
+        else:
+            if not self.bag_arr:
+                self._replenish_bag()
+            return Tetromino(self.bag_arr.pop())
+
 
     #grab future piece without pulling from bag
     def peek(self):
@@ -590,7 +594,7 @@ class Game:
             row = [1] * COLUMNS
             row[hole] = 0
             color_row = ["#FFFFFF00"] * COLUMNS
-            color_row[hole] = "#00000000"
+            color_row[hole] = BLACK
 
             self.block_matrix.append(row)
             color_matrix.append(color_row)
@@ -601,4 +605,3 @@ class Game:
 # to add:
 # save_game()
 # load_game()
-# update the game level
