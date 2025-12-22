@@ -66,6 +66,11 @@ class DQNAgent(Agent):
         
 
     # overridden
+
+#####
+#   choose_action() randomize its decisions via epsilon greedy
+#   if its whim is to EXPLOIT, saka lang nacompute the V(s')
+#####
     def choose_action(self, game):
         ## epsilon greedy policy inside
         next_states = self.get_next_states(game)
@@ -87,26 +92,14 @@ class DQNAgent(Agent):
 
         return best_action
 
-    def store_transition(self, next_state, reward, done):
-        """
-        Stores (s', r, done) in replay memory
-        does not store (s, a) explicitly
-        because learning happens on s' next state
-        """
-        self.replay_buffer.append((next_state, reward, done))
+    def store_transition(self, features, reward, done):
+        # can be (state, reward, done) later
+        self.replay_buffer.append((features, reward, done))
+
 
 
     def learn(self):
-        """
-        Performs one learning step tru experience replay
-        1. samples a random minibatch from replay memory
-        2. for each next_state in batch:
-           - If terminal, target = reward
-           - Else target = reward + gamma * max(V(s'')) for next-next states
-        3. converts batch to arrays and trains the network
-        4. decays epsilon to reduce exploration over time
-        5. syncs target network every target_sync_interval steps
-        """
+        #Performs one learning step tru experience replay
         if len(self.replay_buffer) < self.batch_size:
             return # not enough data to learn
 
@@ -115,25 +108,14 @@ class DQNAgent(Agent):
         states = []
         targets = []
 
-        for next_state, reward, done in batch:
-            # convert state features to numeric array
-            state_features = self._features_to_array(next_state)
-
+        for state_features, reward, done in batch:
             if done:
                 # If terminal, the value is the immediate reward
                 target_value = reward
             else:
-                next_next_states = self.get_next_states(next_state)
-                if not next_next_states:
-                    target_value = reward
-                else:
-                    # limit number of next-next states
-                    # JUST A TESTING FOR THE BUG!!!
-                    sample_states = list(next_next_states.values())[:10]
-                    max_future = max(
-                        self._predict_target_value(s) for s in sample_states
-                    )
-                    target_value = reward + self.gamma * max_future
+                next_features = np.expand_dims(state_features, axis=0)
+                max_future = self.target_model.predict(next_features, verbose=0)[0, 0]
+                target_value = reward + self.gamma * max_future
 
             states.append(state_features)
             targets.append(target_value)
@@ -143,7 +125,8 @@ class DQNAgent(Agent):
         targets = np.array(targets, dtype=np.float32)
 
         # train model on the batch using Mean Squared Error
-        self.model.train_on_batch(states, targets)
+        loss = self.model.train_on_batch(states, targets)
+        print(f"Step {self.learn_step}, Loss: {loss}, Epsilon: {self.epsilon}")
 
         # for logging tracking learning progress
         self.learn_step += 1
@@ -173,7 +156,7 @@ class DQNAgent(Agent):
 
         model.compile(
             optimizer=optimizers.Adam(learning_rate=learning_rate),
-            loss="mse" # changeable loss function
+            loss="mse" # MEAN SQUARED ERROR
         )
 
         return model
@@ -196,9 +179,14 @@ class DQNAgent(Agent):
         return features
 
     def _predict_value(self, game):
-        # Returns predicted value V(s) using main network
+        # Returns predicted value V(s') using main network
         # for exploitation (choose_action)
+
+        # this is next_state (not original game)
         features = self._predictor(game)
+        '''res = self.model.predict(features, verbose=0)[0, 0]
+        print(f"V(s'): {res}")
+        return res'''
         return self.model.predict(features, verbose=0)[0, 0]
 
 

@@ -72,20 +72,30 @@ class Trainer(RendererSolo):
             game.update(dt, self.color_matrix)
 
             ######   agent actions HERE
+            #agent.moves(game, agent, dt, self.color_matrix)
             agent.moves_instant(game, agent, dt, self.color_matrix)
 
+            # BUG: gui stops when choose_action chooses EXPLOITATION rather than random moves
+            # BUG: stops also when agent.learn() is called
+            # HEAVY COMPUTATIONS MOST PROBABLY
+
+            # IT WORKS, JUST WAIT FOR IT
+
+            # this feature are for the EXACT CURRENT game state
+            # inside learn(), we get features for the next_state
+            features = agent._features_to_array(game)
             reward = game.total_pieces + game.lines_cleared  # linear reward
             done = game.game_over
 
             # store state transition (terminal or not)
             agent.store_transition(
-                next_state=game.copy(),
+                features=features,
                 reward=reward,
                 done=done
             )
-            agent.learn()
 
             if done:
+                agent.learn()
                 game.reset(seed)
                 self.__init__(self.screen)
             
