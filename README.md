@@ -2,10 +2,10 @@
 A Tetris Game with Reinforcement Learning AI Agent
 
 ## Game Demo
-![Game Demo](project/assets/game_demo.gif)
+<img src="project/assets/game_demo.gif" alt="Game Demo" width="1440" height="902">
 
 ## Training Demo
-![Training Demo](project/assets/training_demo.gif)
+<img src="project/assets/training_demo.gif" alt="Training Demo" width="666" height="846">
 
 ## Setup
 - Clone the repository and install dependencies from `requirements.txt`
