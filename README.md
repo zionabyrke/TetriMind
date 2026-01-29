@@ -1,6 +1,12 @@
 # TetriMind
 A Tetris Game with Reinforcement Learning AI Agent
 
+## Game Demo
+![Game Demo](project/assets/game_demo.gif)
+
+## Training Demo
+![Training Demo](project/assets/training_demo.gif)
+
 ## Setup
 - Clone the repository and install dependencies from `requirements.txt`
 
